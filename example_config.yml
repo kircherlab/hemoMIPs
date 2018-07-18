@@ -1,0 +1,15 @@
+---
+datasets: 
+   dataset1:
+    lanes: [1,2,3,4,5,6]
+   dataset2:
+    lanes: [1,2,3]
+      
+references:
+   fasta: "<path/to/reference>"
+   inv: "scripts/hemomips_inv_ref/"
+   annotation: "<path/to/cadd>"
+...
+  
+
+  
