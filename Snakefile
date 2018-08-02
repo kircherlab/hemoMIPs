@@ -1,9 +1,8 @@
 ##snakemake hemophilia
 
-
 rule all:
   input:
-    expand("output/{dataset}/mapping/sample.bam",dataset=config.keys())
+    expand("output/{dataset}/mapping/sample.bam",dataset=config["datasets"].keys())
 
  
 rule splithemophilia:
@@ -14,10 +13,18 @@ rule splithemophilia:
     lst="input/{dataset}/sample_index.lst"
   output: 
     bam="output/{dataset}/mapping/sample_l{lane}.bam"
-  log:"output/{dataset}/mapping/processing_stats_l{lane}.log"
-  shell:"paste <( zcat {input.R1} | \
-    cut -c 1-120 ) <( zcat {input.I ) <( zcat {input.R2} | cut -c 1-120 ) | awk '{{ count+=1; if ((count == 1) ||          (count == 3)) {{ print $1 }} else {{ print $1$2$3 }}; if (count == 4) {{ count=0 }} }}' | \
-    scripts/pipeline2.0/SplitFastQdoubleIndexBAM.py --bases_after_index=ATCTCGTATGCCGTCTTCTGCTTG --bases_after_2ndindex='' -l 10 -m 0 -s 131 --summary -i {input.lst} -q 10 -p --remove | scripts/pipeline2.0/MergeTrimReadsBAM.py --mergeoverlap -p > {output.bam} ) 2> {log}"
+  log:
+    "output/{dataset}/mapping/processing_stats_l{lane}.log"
+  conda:
+    "python2.7.yml"
+  shell:"""
+    ( paste <( zcat {input.R1} | cut -c 1-120 ) \
+      <( zcat {input.I} ) \
+      <( zcat {input.R2} | cut -c 1-120 ) | \
+    awk '{{ count+=1; if ((count == 1) || (count == 3)) {{ print $1 }} else {{ print $1$2$3 }}; if (count == 4) {{ count=0 }} }}' | \
+    scripts/pipeline2.0/SplitFastQdoubleIndexBAM.py --bases_after_index=ATCTCGTATGCCGTCTTCTGCTTG --bases_after_2ndindex='' -l 10 -m 0 -s 131 --summary -i {input.lst} -q 10 -p --remove | scripts/pipeline2.0/MergeTrimReadsBAM.py --mergeoverlap -p \
+    > {output.bam} ) 2> {log}
+    """
 
 def getLaneBAMs(wc):
   return(expand("output/{dataset}/mapping/sample_l{lane}.bam", dataset=wc.dataset,lane=config["datasets"][wc.dataset]["lanes"]))
@@ -49,7 +56,8 @@ rule bysample:
   output: expand("output/{{dataset}}/mapping/by_sample/{plate}.bam",plate=loadSamples)
   shell: "for i in $( tail -n +2 {input.lst} | cut -f 2); do samtools view -u -F 513 -r ${i} {input.bam} | scripts/pipeline2.0/FilterBAM.py -q --qual_number 5 --qual_cutoff=15 -p > {output}"
   
-######${i} ${{i}} ???
+  
+  
 
 rule aligning:
   input: expand("output/{{dataset}}/mapping/by_sample/{plate}.bam",plate=loadSamples)
@@ -101,7 +109,7 @@ rule gatk3_genotyping:
         targets="input/{dataset}/targets.intervals",
         fasta=config["references"]["fasta"]
   output:"output/{dataset}/mapping/realign_all_samples.all_sites.vcf.gz"
-  shell: "java -Xmx6G -jar /fast/users/pkleiner_c/GATK3446/GenomeAnalysisTK.jar -T UnifiedGenotyper -R {input.fasta} -I {input.bam} -L {input.targets} -o >( bgzip -c > {output} ) -glm BOTH -rf BadCigar --max_alternate_alleles 15 --output_mode EMIT_ALL_SITES -dt NONE"
+  shell: "java -Xmx6G -jar scripts/GATK3446/GenomeAnalysisTK.jar -T UnifiedGenotyper -R {input.fasta} -I {input.bam} -L {input.targets} -o >( bgzip -c > {output} ) -glm BOTH -rf BadCigar --max_alternate_alleles 15 --output_mode EMIT_ALL_SITES -dt NONE"
 
 
 rule subsetting:

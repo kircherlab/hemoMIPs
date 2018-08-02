@@ -1,1 +1,5 @@
+# Snakefiles
 .snakemake
+# Shed Skin
+bin/
+scripts/pipeline2.0/MergeTrimReads
