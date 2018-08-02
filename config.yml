@@ -1,0 +1,20 @@
+---
+datasets: 
+   dataset1:
+    lanes: [1,2,3,4]
+   dataset2:
+    lanes: [1]
+      
+references:
+   fasta: "/fast/projects/cubit/current/static_data/precomputed/BWA/0.7.12/GRCh37/g1k_phase2/hs37d5.fa"
+   inv: "/fast/groups/ag_kircher/hemophilia/scripts/hemomips_inv_ref/"
+   annotation: "/fast/groups/ag_kircher/CADD/cadd_v1.3/annotations/1000G/phase1_v3.20101123.vcf.gz"
+
+
+GATK:
+  - gatk4
+#  - gatk3
+...
+  
+
+  
