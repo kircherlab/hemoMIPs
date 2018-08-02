@@ -61,7 +61,7 @@ hello, world!
 ```
 If the installation or test fails please have a look a the [Shed Skin Dokumentation](https://shedskin.readthedocs.io/en/latest/).
 
-#### Compiling XYZ scriipt
+#### Compiling MergeTrimReads.py script
 
 Now we need to compile the `MergeTrimReads.py` script using Shed Skin:
 
