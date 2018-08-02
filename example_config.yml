@@ -11,5 +11,5 @@ references:
    annotation: "<path/to/cadd>"
 ...
   
-
+shedskin: "$HOME/miniconda3/envs/shedskin/lib"
   
