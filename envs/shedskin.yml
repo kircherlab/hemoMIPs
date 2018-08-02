@@ -1,0 +1,10 @@
+
+name: shedskin
+channels:
+  - bioconda
+  - conda-forge
+  - defaults
+dependencies:
+  - bdw-gc=7.6.4
+  - pcre
+  - python=2.6
