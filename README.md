@@ -15,6 +15,14 @@ module load gmp/5.0.2 mpfr/3.1.0 mpc/0.8.2 gcc/4.9.1
 
 ### hemoMIPs Conda environment
 
+Different environments with different softwares are needed to run the hemoMIPs pipeline. E.g. Snakemake need Python 3.x but some scripts are in Pyhton 2.x. But now worries, Snakemake can handle that for you. You just have to install Snakemake using Conda. This can be done by creating the main environment to run the hemoMIPs pipeline via Snakemake:
+
+```bash
+conda env create -n hemoMIPs --file environment.yaml
+```
+
+Finally you can activate the environment via `source activate hemoMIPs`. Now the `snakemake` command is available.
+
 ### Shed Skin
 
 Shed Skin is an experimental compiler, that can translate pure, but implicitly statically typed Python (2.4-2.6) programs into optimized C++. To fasten the mapping process one one of our python scripts have to be translated to C++ with Shed Skin.
@@ -22,6 +30,7 @@ Shed Skin is an experimental compiler, that can translate pure, but implicitly s
 First we need an environment with python v2.6 and the requirements for Shed Skin. Therefore we created the environment file `envs/shedskin.yml`. Be sure that you are in your root hemoMIPs pipeline folder.
 
 ```bash
+# create a new environment
 conda env create -f envs/shedskin.yml -n shedskin
 
 mkdir -p ~/miniconda3/envs/shedskin/etc/conda/activate.d
@@ -83,4 +92,19 @@ sed -i '3s|$| -L ~/miniconda3/envs/shedskin/lib|' Makefile
 # Compile!
 make
 cd ../../
+```
+
+
+## Runninh hemoMIPs
+
+### Config
+
+### Run pipeline
+
+```bash
+source activate hemoMIPs
+# dry run to see if everything works
+snakemake  --use-conda --configfile config.yml -n
+# run the pipeline
+snakemake  --use-conda --configfile config.yml
 ```
