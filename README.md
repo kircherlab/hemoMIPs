@@ -2,9 +2,6 @@
 
 ## Pre-requirements
 =======
-Needed for better performance:
-Shedskin
-shedskin -e MergeTrimReads.py
 
 module load python/2.7.3
 module load pysam/0.7.5
@@ -87,7 +84,7 @@ Now we need to compile the `MergeTrimReads.py` script using Shed Skin:
 # Go to the script folder
 cd ../../scripts/pipeline2.0
 # create Makefile and edit it
-shedskin -L ~/miniconda3/envs/shedskin/include MergeTrimReads
+shedskin -e -L ~/miniconda3/envs/shedskin/include MergeTrimReads
 sed -i '3s|$| -L ~/miniconda3/envs/shedskin/lib|' Makefile
 # Compile!
 make
@@ -95,7 +92,7 @@ cd ../../
 ```
 
 
-## Runninh hemoMIPs
+## Running hemoMIPs
 
 ### Config
 
