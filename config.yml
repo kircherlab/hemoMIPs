@@ -1,9 +1,9 @@
 ---
 datasets: 
    dataset1:
-    lanes: [1,2,3,4]
-   dataset2:
-    lanes: [1]
+      lanes: [1,2,3,4]
+#   dataset2:
+#      lanes: [1]
       
 references:
    fasta: "/fast/projects/cubit/current/static_data/precomputed/BWA/0.7.12/GRCh37/g1k_phase2/hs37d5.fa"
