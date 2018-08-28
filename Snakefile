@@ -1,21 +1,25 @@
-##snakemake hemophilia
+# Snakemake hemophilia
 
 rule all:
   input:
-        expand("output/{dataset}/{gatk}/report/summary.html",gatk=config["GATK"],dataset=config["datasets"].keys())
- 
+    expand("output/{dataset}/{gatk}/report/summary.html",gatk=config["GATK"],dataset=config["datasets"].keys())
+
+
 rule splithemophilia:
   input:
     R1="input/{dataset}/Undetermined_S0_L00{lane}_R1_001.fastq.gz",
     I="input/{dataset}/Undetermined_S0_L00{lane}_I1_001.fastq.gz",
     R2="input/{dataset}/Undetermined_S0_L00{lane}_R2_001.fastq.gz",
     lst="input/{dataset}/sample_index.lst"
-  output: 
+  output:
     bam="output/{dataset}/mapping/sample_l{lane}.bam"
+  params:
+    shedskin=config['shedskin']
   log:
     "output/{dataset}/mapping/processing_stats_l{lane}.log"
   conda: "hemoMIPs.yml"
   shell:"""
+    export export LD_LIBRARY_PATH="{params.shedskin}:$LD_LIBRARY_PATH";
     ( paste <( zcat {input.R1} | cut -c 1-120 ) \
       <( zcat {input.I} ) \
       <( zcat {input.R2} | cut -c 1-120 ) | \
@@ -33,6 +37,7 @@ rule mergebam:
   conda: "hemoMIPs.yml"
   shell: "samtools merge -c {output} {input}"
 
+
 def loadSamples(wc):
   file = file.read("input/%s/sample_index.lst" % wc.dataset)
   output=[]
@@ -42,11 +47,11 @@ def loadSamples(wc):
 
 rule reheadering:
   input:sam="input/sam_header_hg19_1000g.sam",
-        lst="input/{dataset}/sample_index.lst" 
+        lst="input/{dataset}/sample_index.lst"
   output:"input/{dataset}/new_header.sam"
   conda: "hemoMIPs.yml"
   shell:"""
-        ( cat {input.sam}; tail -n +2 {input.lst}  | awk 'BEGIN{{ FS="\\t"; OFS="\\t" }}{{ print "@RG","ID:"$2,"PL:Illumina","LB:"$2,"SM:"$2                }}'     ) > {output} 
+        ( cat {input.sam}; tail -n +2 {input.lst}  | awk 'BEGIN{{ FS="\\t"; OFS="\\t" }}{{ print "@RG","ID:"$2,"PL:Illumina","LB:"$2,"SM:"$2                }}'     ) > {output}
         """
 
 
@@ -56,24 +61,24 @@ rule bysample:
   output: expand("output/{{dataset}}/mapping/by_sample/{plate}.bam",plate=loadSamples)
   conda: "hemoMIPs.yml"
   shell: "for i in $( tail -n +2 {input.lst} | cut -f 2); do samtools view -u -F 513 -r ${i} {input.bam} | scripts/pipeline2.0/FilterBAM.py -q --qual_number 5 --qual_cutoff=15 -p > {output}"
-  
-  
-  
+
+
+
 
 rule aligning:
   input: expand("output/{{dataset}}/mapping/by_sample/{plate}.bam",plate=loadSamples)
   output: expand("output/{{dataset}}/mapping/aligned/{plate}.bam",plate=loadSamples)
   conda: "hemoMIPs.yml"
   shell:"""
-    bwa mem -L 80 -M -C {fasta} <( samtools view -F 513 {input} | awk 'BEGIN{{ OFS="\\n"; FS="\\t" }}{{ print "@"$1"\\t"$12"\\t"$13"\\t"$14,$10,"+",$11 }}' ) | samtools view -u - | samtools sort - | scripts/pipeline2.0/TrimMIParms.py -d hemomips_design.txt -p | samtools reheader new_header.sam - | samtools sort -o {output} - 
+    bwa mem -L 80 -M -C {fasta} <( samtools view -F 513 {input} | awk 'BEGIN{{ OFS="\\n"; FS="\\t" }}{{ print "@"$1"\\t"$12"\\t"$13"\\t"$14,$10,"+",$11 }}' ) | samtools view -u - | samtools sort - | scripts/pipeline2.0/TrimMIParms.py -d hemomips_design.txt -p | samtools reheader new_header.sam - | samtools sort -o {output} -
     """
-    
+
 rule indexing:
   input: expand("output/{{dataset}}/mapping/aligned/{plate}.bam",plate=loadSamples)
   output: expand("output/{{dataset}}/mapping/aligned/{plate}.bai",plate=loadSamples)
   conda: "hemoMIPs.yml"
   shell: "samtools index {input} {output}"
-  
+
 rule samplesexcheck:
   input: expand("output/{{dataset}}/mapping/aligned/{plate}.bam", plate=loadSamples)
   output:"output/{dataset}/samples_sex_check.txt"
@@ -81,7 +86,7 @@ rule samplesexcheck:
   shell: "( for i in {input}; do echo $( basename $i ) $(samtools view $i Y | wc -l) $(samtools view -F u $i | wc -l); done )> {output}"
 
 rule inversionmips:
-  input:bam="output/{dataset}/mapping/sample.bam", 
+  input:bam="output/{dataset}/mapping/sample.bam",
         sam="input/{dataset}/new_header.sam",
         inv=expand("{reference}/hemomips_inv_ref.fa",reference=config["references"]["inv"])
   output:expand("output/{{dataset}}/mapping/inversion_mips/{plate}.bam", plate=loadSamples)
@@ -95,8 +100,8 @@ rule inversionsum:
   shell: """
     ( for i in $(tail -n +2 {input.lst} | cut -f 2 ); do echo $i $( ( samtools view -F 513 {input.bam} | awk 'BEGIN{ FS="\\t" }}{{ split($12,a,":"); if (($6 !~ /S/) && (a[1] == "NM") && (a[3] <= 10)) {{ print $3 }} }}'; samtools view -f 2 -F 512 {input.bam} | awk 'BEGIN{{ FS="\\t"; OFS="\\t" }}{{ split($12,a,":"); if (($6 !~ /S/) && (a[1] == "NM") && (a[3] <= 10)) {{ print $1,$3 }} }}' | sort | uniq -c | awk '{{ if ($1 == 2) print $3 }}' ) | sort | uniq -c | awk '{{ print $1":"$2 }}' ); done )> {output}
     """
- 
-########
+
+
 
 rule gatk3_align:
   input:bam=expand("output/{{dataset}}/mapping/aligned/{plate}.bam", plate=loadSamples)
@@ -239,7 +244,3 @@ rule summaryreport_gatk4:
   output:"output/{dataset}/gatk4/report/summary.html"
   conda: "hemoMIPs.yml"
   shell: "scripts/processing/summary_report.py --vcf {input.vcf} --vep {input.vep} --inversions {input.inv} --sample_sex {input.sex} --target {input.target} --mipstats {input.mips} --indelCheck {input.indel} --design {input.hemomips} --TG {input.tg}"
-
-
-
-
