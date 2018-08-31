@@ -84,11 +84,14 @@ rule indexing:
 
 def sampleBamsAligned(wc):
     return (expand("output/{dataset}/mapping/aligned/{plate}.bam", dataset=wc.dataset, plate=loadSamples(wc)))
+def sampleBamsAlignedIdx(wc):
+    return (expand("output/{dataset}/mapping/aligned/{plate}.bai", dataset=wc.dataset, plate=loadSamples(wc)))
 
 rule samplesexcheck:
   input:
     lst="input/{dataset}/sample_index.lst",
-    bams=sampleBamsAligned
+    bams=sampleBamsAligned,
+    idx=sampleBamsAlignedIdx
   output:"output/{dataset}/samples_sex_check.txt"
   conda: "envs/rules.yml"
   shell: "( for i in {input.bams}; do echo $( basename $i ) $(samtools view $i Y | wc -l) $(samtools view -F u $i | wc -l); done )> {output}"
@@ -96,7 +99,7 @@ rule samplesexcheck:
 rule inversionmips:
   input:bam="output/{dataset}/mapping/sample.bam",
         sam="input/{dataset}/new_header.sam",
-        inv=expand("{reference}/hemomips_inv_ref.fa",reference=config["references"]["inv"])
+        inv=config["references"]["inv"]
   output: "output/{dataset}/mapping/inversion_mips/{plate}.bam"
   params:
     plate="{plate}"
@@ -130,11 +133,14 @@ rule inversionsum:
 
 # GATK4
 rule gatk4_HTcaller:
-  input:bamin=sampleBamsAligned,
-        targets="input/{dataset}/targets.intervals",
-        fasta=config["references"]["fasta"]
-  output:bamout="output/{dataset}/mapping/gatk4/realign_all_samples.bam",
-        vcf="output/{dataset}/mapping/gatk4/bam.vcf.gz"
+  input:
+    bamin=sampleBamsAligned,
+    baminIdx=sampleBamsAlignedIdx,
+    targets="input/{dataset}/targets.intervals",
+    fasta=config["references"]["fasta"]
+  output:
+    bamout="output/{dataset}/mapping/gatk4/realign_all_samples.bam",
+    vcf="output/{dataset}/mapping/gatk4/bam.vcf.gz"
   conda:"python3gatk4.yml"
   shell: "gatk HaplotypeCaller -R {input.fasta} -L {input.targets} $(ls -1 {input.bamin} | xargs -n 1 echo -I ) --output-mode EMIT_ALL_SITES -bamout {output.bamout} -O {output.vcf} --disable-optimizations"
 
@@ -143,11 +149,16 @@ rule gatk4_gvcfs:
     lst="input/{dataset}/sample_index.lst",
     fasta=config["references"]["fasta"],
     targets="input/{dataset}/targets.intervals",
-    bam="output/{dataset}/mapping/aligned/{plate}.bam"
-  output:"output/{dataset}/mapping/gatk4/gvcf/{plate}.g.vcf.gz"
+    bam="output/{dataset}/mapping/aligned/{plate}.bam",
+    idx="output/{dataset}/mapping/aligned/{plate}.bai",
+  output:
+    "output/{dataset}/mapping/gatk4/gvcf/{plate}.g.vcf.gz"
+  params:
+    plate="{plate}"
   conda:"python3gatk4.yml"
   shell:"""
-    for i in $(less {input.lst} | cut -f 2 ); do (gatk HaplotypeCaller --max-reads-per-alignment-start 0 --disable-optimizations --sample-name ${{i}} -ERC GVCF -R {input.fasta} -I {input.bam} -L {input.targets} -O {output} ); done
+    gatk HaplotypeCaller --max-reads-per-alignment-start 0 --disable-optimizations \
+    --sample-name {params.plate} -ERC GVCF -R {input.fasta} -I {input.bam} -L {input.targets} -O {output}
     """
 
 def sampleBamsInversion(wc):
