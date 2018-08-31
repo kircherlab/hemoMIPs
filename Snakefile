@@ -2,7 +2,7 @@
 
 rule all:
   input:
-    expand("output/{dataset}/{gatk}/report/summary.html",gatk=config["GATK"],dataset=config["datasets"].keys())
+    expand("output/{dataset}/mapping/sample.bam",gatk=config["GATK"],dataset=config["datasets"].keys())
 
 rule splithemophilia:
   input:
@@ -140,9 +140,11 @@ rule tabixing2:
   shell: "tabix -p vcf {input} > {output}"
 
 rule VEP:
-  input:"output/{dataset}/mapping/gatk3/realign_all_samples.vcf.gz"
+  input:vcf="output/{dataset}/mapping/gatk3/realign_all_samples.vcf.gz",
+         fasta2=config["references"]["fasta2"]
   output:"output/{dataset}/mapping/gatk3/realign_all_samples.vep.tsv.gz"
-  shell: "scripts/processing/VCF2VEP.sh {input} {output}"
+  shell: """zcat ${{1}} | scripts/processing/VCF2vepVCF.py | perl /VEPSKRIPTINPUT --no_stats --fasta {input.fasta} --quiet --buffer 2000 --cache --offline --species homo_sapiens --db_version=77 --format vcf --symbol --hgvs --regulatory --gmaf --sift b --polyphen b --ccds --domains --numbers --canonical --shift_hgvs --output_file >( awk 'BEGIN{{ FS="\\t"; OFS="\\t"; }}{{ if ($1 ~ /^##/) {{ print }} else if ($1 ~ /^#/) {{ sub("^#","",$0); print "#Chrom","Start","End",$0 }} else {{ split($2,a,":"); if (a[2] ~ /-/) {{ split(a[2],b,"-"); print a[1],b[1],b[2],$0 }} else {{ print a[1],a[2],a[2],$0 }} }} }}' | grep -E "(^#|ENST00000360256|ENST00000218099)" | bgzip -c > ${2} ) --force_overwrite
+  """
 
 
 rule checkPileUp:
@@ -217,11 +219,13 @@ rule gatk4_MIPstats:
   conda: "hemoMIPs.yml"
   shell: "/scripts/pipeline2.0/MIPstats.py {input} -o {output}"
 
+
 rule VEP_gatk4:
-  input:"output/{dataset}/mapping/gatk4/realign_all_samples.vcf.gz"
-  output:"output/{dataset}/mapping/gatk4/realign_all_samples.vep.tsv.gz"
-  conda: "hemoMIPs.yml"
-  shell: "scripts/processing/VCF2VEP.sh {input} {output}"
+  input:vcf="output/{dataset}/mapping/gatk4/realign_all_samples.vcf.gz",
+        fasta2=config["references"]["fasta2"]
+  output:"output/{dataset}/mapping/gatk3/realign_all_samples.vep.tsv.gz"
+  shell: """zcat {input.vcf} | scripts/processing/VCF2vepVCF.py | perl /VEPSKRIPTINPUT --no_stats --fasta {input.fasta} --quiet --buffer 2000 --cache --offline --species homo_sapiens --db_version=77 --format vcf --symbol --hgvs --regulatory --gmaf --sift b --polyphen b --ccds --domains --numbers --canonical --shift_hgvs --output_file >( awk 'BEGIN{{ FS="\\t"; OFS="\\t"; }}{{ if ($1 ~ /^##/) {{ print }} else if ($1 ~ /^#/) {{ sub("^#","",$0); print "#Chrom","Start","End",$0 }} else {{ split($2,a,":"); if (a[2] ~ /-/) {{ split(a[2],b,"-"); print a[1],b[1],b[2],$0 }} else {{ print a[1],a[2],a[2],$0 }} }} }}' | grep -E "(^#|ENST00000360256|ENST00000218099)" | bgzip -c > ${2} ) --force_overwrite
+  """
 
 
 rule checkPileUp_gatk4:
