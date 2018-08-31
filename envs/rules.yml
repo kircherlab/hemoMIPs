@@ -13,3 +13,6 @@ dependencies:
   - samtools=1.7
   - bzip2=1.0.6
   - pysam=0.14
+  - bx-python=0.7.4
+  - numpy=1.12.1
+  - htslib=1.7
