@@ -67,7 +67,7 @@ rule bysample:
 rule aligning:
   input:
     bam="output/{dataset}/mapping/by_sample/{plate}.bam",
-    fasta=config["references"]["fasta"],
+    fasta=config["references"]["bwa"],
     design="input/{dataset}/hemomips_design.txt",
     new_header="input/{dataset}/new_header.sam"
   output: "output/{dataset}/mapping/aligned/{plate}.bam"

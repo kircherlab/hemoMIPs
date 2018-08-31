@@ -6,6 +6,7 @@ datasets:
 
 references:
    fasta: "<path/to/reference>"
+   bwa: "<path/to/BWA_indexed_reference>"
    inv: "scripts/hemomips_inv_ref/"
    annotation: "<path/to/cadd>"
 
