@@ -263,6 +263,6 @@ rule summaryreport_gatk4:
         hemomips="input/{dataset}/hemomips_design.txt",
         tg=config["references"]["annotation"]
   output:
-    folder=directory("output/{dataset}/{gatk}/report")
+        folder=directory("output/{dataset}/{gatk}/report")
   conda: "envs/rules.yml"
   shell: """scripts/processing/summary_report.py --vcf {input.vcf} --vep {input.vep} --inversions {input.inv} --sample_sex {input.sex} --target {input.target} --mipstats {input.mips} --indelCheck {input.indel} --design {input.hemomips} --TG {input.tg} && mv report/ {output.folder}"""
