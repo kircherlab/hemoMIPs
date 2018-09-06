@@ -141,7 +141,7 @@ rule gatk4_HTcaller:
   output:
     bamout="output/{dataset}/mapping/gatk4/realign_all_samples.bam",
     vcf="output/{dataset}/mapping/gatk4/bam.vcf.gz"
-  conda:"python3gatk4.yml"
+    conda:"envs/python3gatk4.yml"
   shell: "gatk HaplotypeCaller -R {input.fasta} -L {input.targets} $(ls -1 {input.bamin} | xargs -n 1 echo -I ) --output-mode EMIT_ALL_SITES -bamout {output.bamout} -O {output.vcf} --disable-optimizations"
 
 rule gatk4_gvcfs:
@@ -155,7 +155,7 @@ rule gatk4_gvcfs:
     vcfgz="output/{dataset}/mapping/gatk4/gvcf/{plate}.g.vcf.gz"
   params:
     plate="{plate}"
-  conda:"python3gatk4.yml"
+    conda:"envs/python3gatk4.yml"
   shell:"""
     gatk --java-options "-Xmx8G" HaplotypeCaller --max-reads-per-alignment-start 0 --disable-optimizations \
     --sample-name {params.plate} -ERC GVCF -R {input.fasta} -I {input.bam} -L {input.targets} -O {output.vcfgz}
@@ -177,7 +177,7 @@ rule gatk4_genotype:
     fasta=config["references"]["fasta"],
     vcf="output/{dataset}/mapping/gatk4/realign_all_samples.all_sites.vcf.gz"
   output:"output/{dataset}/mapping/gatk4/realign_all_samples.vcf.gz"
-  conda:"python3gatk4.yml"
+  conda:"envs/python3gatk4.yml"
   shell:"gatk GenotypeGVCFs -R {input.fasta} -V {input.vcf} -O {output}"
 
 # GATK3
@@ -243,8 +243,9 @@ rule checkPileUp:
 rule VEP:
   input:vcf="output/{dataset}/mapping/{gatk}/realign_all_samples.vcf.gz",
         fasta2=config["references"]["fasta2"]
+        veppath=config["tools"]["vep"]
   output:"output/{dataset}/mapping/{gatk}/realign_all_samples.vep.tsv.gz"
-  shell: """zcat {input.vcf} | scripts/processing/VCF2vepVCF.py | perl /fast/users/pkleiner_c/vep77/ensembl-tools-release-77/scripts/variant_effect_predictor/variant_effect_predictor.pl --no_stats --fasta {input.fasta2} --quiet --buffer 2000 --cache --offline --species homo_sapiens --db_version=77 --format vcf --symbol --hgvs --regulatory --gmaf --sift b --polyphen b --ccds --domains --numbers --canonical --shift_hgvs --output_file >( awk 'BEGIN{{ FS="\\t"; OFS="\\t"; }}{{ if ($1 ~ /^##/) {{ print }} else if ($1 ~ /^#/) {{ sub("^#","",$0); print "#Chrom","Start","End",$0 }} else {{ split($2,a,":"); if (a[2] ~ /-/) {{ split(a[2],b,"-"); print a[1],b[1],b[2],$0 }} else {{ print a[1],a[2],a[2],$0 }} }} }}' | grep -E "(^#|ENST00000360256|ENST00000218099)" | bgzip -c > {output} ) --force_overwrite
+  shell: """zcat {input.vcf} | scripts/processing/VCF2vepVCF.py | perl {input.veppath} --no_stats --fasta {input.fasta2} --quiet --buffer 2000 --cache --offline --species homo_sapiens --db_version=77 --format vcf --symbol --hgvs --regulatory --gmaf --sift b --polyphen b --ccds --domains --numbers --canonical --shift_hgvs --output_file >( awk 'BEGIN{{ FS="\\t"; OFS="\\t"; }}{{ if ($1 ~ /^##/) {{ print }} else if ($1 ~ /^#/) {{ sub("^#","",$0); print "#Chrom","Start","End",$0 }} else {{ split($2,a,":"); if (a[2] ~ /-/) {{ split(a[2],b,"-"); print a[1],b[1],b[2],$0 }} else {{ print a[1],a[2],a[2],$0 }} }} }}' | grep -E "(^#|ENST00000360256|ENST00000218099)" | bgzip -c > {output} ) --force_overwrite
   """
 
 ##############################################

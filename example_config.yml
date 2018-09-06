@@ -1,17 +1,26 @@
-datasets:
+---
+datasets: 
    dataset1:
-    lanes: [1,2,3,4,5,6]
+      lanes: [1,2,3,4]
    dataset2:
-    lanes: [1,2,3]
-
+      lanes: [1]
+      
 references:
-   fasta: "<path/to/reference>"
-   bwa: "<path/to/BWA_indexed_reference>"
-   inv: "scripts/hemomips_inv_ref/"
-   annotation: "<path/to/cadd>"
+   fasta: "/{reference-path}"
+   bwa: "/{bwa-indexed-reference-path}"
+   inv: "/{inversion-reference-path}"
+   annotation: "/{annotation-path}"
+   fasta2: "/{homosapiens-toplevel-path}"
+
+shedskin: "/{shedskin-configuration-path"
+
+tools:
+   vep: "/{vep-installation-path}"
 
 GATK:
-   - "gatk4"
-   #- "gatk3"
+  - gatk4
+#  - gatk3
+...
+  
 
-shedskin: "$HOME/miniconda3/envs/shedskin/lib"
+  
