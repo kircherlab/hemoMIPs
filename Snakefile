@@ -242,10 +242,11 @@ rule checkPileUp:
 
 rule VEP:
   input:vcf="output/{dataset}/mapping/{gatk}/realign_all_samples.vcf.gz",
-        fasta2=config["references"]["fasta2"]
-        veppath=config["tools"]["vep"]
+        fasta2=config["references"]["fasta2"],
+        veppath=config["tools"]["vep"],
+        vepversion=config["parameters"]["vep-version"]
   output:"output/{dataset}/mapping/{gatk}/realign_all_samples.vep.tsv.gz"
-  shell: """zcat {input.vcf} | scripts/processing/VCF2vepVCF.py | perl {input.veppath} --no_stats --fasta {input.fasta2} --quiet --buffer 2000 --cache --offline --species homo_sapiens --db_version=77 --format vcf --symbol --hgvs --regulatory --gmaf --sift b --polyphen b --ccds --domains --numbers --canonical --shift_hgvs --output_file >( awk 'BEGIN{{ FS="\\t"; OFS="\\t"; }}{{ if ($1 ~ /^##/) {{ print }} else if ($1 ~ /^#/) {{ sub("^#","",$0); print "#Chrom","Start","End",$0 }} else {{ split($2,a,":"); if (a[2] ~ /-/) {{ split(a[2],b,"-"); print a[1],b[1],b[2],$0 }} else {{ print a[1],a[2],a[2],$0 }} }} }}' | grep -E "(^#|ENST00000360256|ENST00000218099)" | bgzip -c > {output} ) --force_overwrite
+  shell: """zcat {input.vcf} | scripts/processing/VCF2vepVCF.py | perl {input.veppath} --no_stats --fasta {input.fasta2} --quiet --buffer 2000 --cache --offline --species homo_sapiens --db_version={input.vepversion} --format vcf --symbol --hgvs --regulatory --gmaf --sift b --polyphen b --ccds --domains --numbers --canonical --shift_hgvs --output_file >( awk 'BEGIN{{ FS="\\t"; OFS="\\t"; }}{{ if ($1 ~ /^##/) {{ print }} else if ($1 ~ /^#/) {{ sub("^#","",$0); print "#Chrom","Start","End",$0 }} else {{ split($2,a,":"); if (a[2] ~ /-/) {{ split(a[2],b,"-"); print a[1],b[1],b[2],$0 }} else {{ print a[1],a[2],a[2],$0 }} }} }}' | grep -E "(^#|ENST00000360256|ENST00000218099)" | bgzip -c > {output} ) --force_overwrite
   """
 
 ##############################################

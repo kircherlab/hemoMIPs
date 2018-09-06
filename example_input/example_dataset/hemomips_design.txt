@@ -1,0 +1,1 @@
+>index	score	chr	ext_probe_start	ext_probe_stop	ext_probe_copy	ext_probe_sequence	lig_probe_start	lig_probe_stop	lig_probe_copy	lig_probe_sequence	mip_scan_start_position	mip_scan_stop_position	scan_target_sequence	mip_sequence	feature_start_position	feature_stop_position	probe_strand	failure_flags	gene_name	mip_name

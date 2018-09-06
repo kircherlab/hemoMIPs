@@ -17,6 +17,9 @@ shedskin: "/{shedskin-configuration-path"
 tools:
    vep: "/{vep-installation-path}"
 
+parameters:
+   vep-version: "two digit number of vep database version {recommended version 77}"
+
 GATK:
   - gatk4
 #  - gatk3
