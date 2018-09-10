@@ -194,7 +194,7 @@ rule gatk3_genotyping:
         fasta=config["references"]["fasta"]
   output:"output/{dataset}/mapping/gatk3/realign_all_samples.all_sites.vcf.gz"
   conda: "envs/rules.yml"
-  shell: "java -Xmx6G -jar scripts/GATK3446/GenomeAnalysisTK.jar -T UnifiedGenotyper -R {input.fasta} -I {input.bam} -L {input.targets} -o >( bgzip -c > {output} ) -glm BOTH -rf BadCigar --max_alternate_alleles 15 --output_mode EMIT_ALL_SITES -dt NONE"
+  shell: "java -Xmx6G -jar tools/GATK3446/GenomeAnalysisTK.jar -T UnifiedGenotyper -R {input.fasta} -I {input.bam} -L {input.targets} -o >( bgzip -c > {output} ) -glm BOTH -rf BadCigar --max_alternate_alleles 15 --output_mode EMIT_ALL_SITES -dt NONE"
 
 rule gatk3_subsetting:
     input:"output/{dataset}/mapping/gatk3/realign_all_samples.all_sites.vcf.gz"
