@@ -14,7 +14,6 @@ import gzip
 import pysam
 import math
 from collections import defaultdict
-sys.path.append("/fast/groups/ag_kircher/bin/seattle/src/")
 from AnalysisLib import get_from_tabix,eval_1000G_frequencies
 from bx.intervals.intersection import Intersecter, Interval
 
