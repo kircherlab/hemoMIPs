@@ -141,7 +141,7 @@ rule gatk4_HTcaller:
   output:
     bamout="output/{dataset}/mapping/gatk4/realign_all_samples.bam",
     vcf="output/{dataset}/mapping/gatk4/bam.vcf.gz"
-    conda:"envs/python3gatk4.yml"
+  conda:"envs/python3gatk4.yml"
   shell: "gatk HaplotypeCaller -R {input.fasta} -L {input.targets} $(ls -1 {input.bamin} | xargs -n 1 echo -I ) --output-mode EMIT_ALL_SITES -bamout {output.bamout} -O {output.vcf} --disable-optimizations"
 
 rule gatk4_gvcfs:
@@ -155,7 +155,7 @@ rule gatk4_gvcfs:
     vcfgz="output/{dataset}/mapping/gatk4/gvcf/{plate}.g.vcf.gz"
   params:
     plate="{plate}"
-    conda:"envs/python3gatk4.yml"
+  conda:"envs/python3gatk4.yml"
   shell:"""
     gatk --java-options "-Xmx8G" HaplotypeCaller --max-reads-per-alignment-start 0 --disable-optimizations \
     --sample-name {params.plate} -ERC GVCF -R {input.fasta} -I {input.bam} -L {input.targets} -O {output.vcfgz}
