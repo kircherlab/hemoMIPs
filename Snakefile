@@ -124,8 +124,12 @@ rule inversionsum:
   output:"output/{dataset}/mapping/inversion_mips/inversion_summary_counts.txt"
   conda: "envs/rules.yml"
   shell: """
-    ( for i in $(tail -n +2 {input.lst} | cut -f 2 ); do echo $i $( ( samtools view -F 513 {input.bam} | awk 'BEGIN{{ FS="\\t" }}{{ split($12,a,":"); if (($6 !~ /S/) && (a[1] == "NM") && (a[3] <= 10)) {{ print $3 }} }}'; samtools view -f 2 -F 512 {input.bam} | awk 'BEGIN{{ FS="\\t"; OFS="\\t" }}{{ split($12,a,":"); if (($6 !~ /S/) && (a[1] == "NM") && (a[3] <= 10)) {{ print $1,$3 }} }}' | sort | uniq -c | awk '{{ if ($1 == 2) print $3 }}' ) | sort | uniq -c | awk '{{ print $1":"$2 }}' ); done )> {output}
+    (for bam in {input.bam}; do
+      i=`basename $bam ".bam"`;
+      echo $i $( ( samtools view -F 513 $bam | awk 'BEGIN{{ FS="\\t" }}{{ split($12,a,":"); if (($6 !~ /S/) && (a[1] == "NM") && (a[3] <= 10)) {{ print $3 }} }}'; samtools view -f 2 -F 512 $bam | awk 'BEGIN{{ FS="\\t"; OFS="\\t" }}{{ split($12,a,":"); if (($6 !~ /S/) && (a[1] == "NM") && (a[3] <= 10)) {{ print $1,$3 }} }}' | sort | uniq -c | awk '{{ if ($1 == 2) print $3 }}' ) | sort | uniq -c | awk '{{ print $1":"$2 }}' );
+      done )> {output}
     """
+
 
 ############################################
 # Realignment and Variant Calling
@@ -141,6 +145,8 @@ rule gatk4_HTcaller:
   output:
     bamout="output/{dataset}/mapping/gatk4/realign_all_samples.bam",
     vcf="output/{dataset}/mapping/gatk4/bam.vcf.gz"
+  benchmark:  
+    repeat("benchmarks/gatk4/{dataset}/HTcaller.tsv",2)
   conda:"envs/python3gatk4.yml"
   shell: "gatk HaplotypeCaller -R {input.fasta} -L {input.targets} $(ls -1 {input.bamin} | xargs -n 1 echo -I ) --output-mode EMIT_ALL_SITES -bamout {output.bamout} -O {output.vcf} --disable-optimizations"
 
@@ -153,6 +159,8 @@ rule gatk4_gvcfs:
     idx="output/{dataset}/mapping/aligned/{plate}.bai",
   output:
     vcfgz="output/{dataset}/mapping/gatk4/gvcf/{plate}.g.vcf.gz"
+  benchmark:  
+    repeat("benchmarks/gatk4/{dataset}/{plate}/gvcfs.tsv",2)
   params:
     plate="{plate}"
   conda:"envs/python3gatk4.yml"
@@ -168,7 +176,9 @@ rule gatk4_combine:
   input:fasta=config["references"]["fasta"],
         gvcf=sampleBamsInversion
   output:bamout="output/{dataset}/mapping/gatk4/realign_all_samples.all_sites.vcf.gz"
-  conda:"python3gatk4.yml"
+  benchmark:  
+    repeat("benchmarks/gatk4/{dataset}/gvcf_combine.tsv",2)
+  conda:"envs/python3gatk4.yml"
   shell:"gatk CombineGVCFs --break-bands-at-multiples-of 1 -R {input.fasta} $(ls -1 {input.gvcf} | xargs -n 1 echo -V ) -O {output.bamout}"
 
 
@@ -177,6 +187,8 @@ rule gatk4_genotype:
     fasta=config["references"]["fasta"],
     vcf="output/{dataset}/mapping/gatk4/realign_all_samples.all_sites.vcf.gz"
   output:"output/{dataset}/mapping/gatk4/realign_all_samples.vcf.gz"
+  benchmark:  
+    repeat("benchmarks/gatk4/{dataset}/genotype.tsv",2)
   conda:"envs/python3gatk4.yml"
   shell:"gatk GenotypeGVCFs -R {input.fasta} -V {input.vcf} -O {output}"
 
@@ -184,21 +196,29 @@ rule gatk4_genotype:
 
 rule gatk3_realign:
   input:
-    bam=sampleBamsAligned
+    bam=sampleBamsAligned,
+    fasta=config["references"]["fasta"],
+    intervals="input/{dataset}/targets_split.intervals"
   output:"output/{dataset}/mapping/gatk3/realign_all_samples.bam"
-  shell: "java -Xmx8G -jar tools/GATK322/GenomeAnalysisTK.jar -T IndelRealigner -R {fa} -DBQ 3 -filterNoBases -maxReads 1500000 -maxInMemory 1500000 -targetIntervals targets_split.intervals $(ls -1 {input.bam} | xargs -n 1 echo -I ) -o {output} -dt BY_SAMPLE -dcov 500"
+  benchmark:  
+    "benchmarks/gatk3/{dataset}/realign.tsv"
+  shell: "java -Xmx8G -jar tools/GATK322/GenomeAnalysisTK.jar -T IndelRealigner -R {input.fasta} -DBQ 3 -filterNoBases -maxReads 1500000 -maxInMemory 1500000 -targetIntervals {input.intervals} $(ls -1 {input.bam} | xargs -n 1 echo -I ) -o {output} -dt BY_SAMPLE -dcov 500"
 
 rule gatk3_genotyping:
   input:bam="output/{dataset}/mapping/gatk3/realign_all_samples.bam",
         targets="input/{dataset}/targets.intervals",
         fasta=config["references"]["fasta"]
   output:"output/{dataset}/mapping/gatk3/realign_all_samples.all_sites.vcf.gz"
+  benchmark:  
+    "benchmarks/gatk3/{dataset}/genotyping.tsv"
   conda: "envs/rules.yml"
   shell: "java -Xmx6G -jar tools/GATK3446/GenomeAnalysisTK.jar -T UnifiedGenotyper -R {input.fasta} -I {input.bam} -L {input.targets} -o >( bgzip -c > {output} ) -glm BOTH -rf BadCigar --max_alternate_alleles 15 --output_mode EMIT_ALL_SITES -dt NONE"
 
 rule gatk3_subsetting:
     input:"output/{dataset}/mapping/gatk3/realign_all_samples.all_sites.vcf.gz"
     output:"output/{dataset}/mapping/gatk3/realign_all_samples.vcf.gz"
+    benchmark:  
+      "benchmarks/gatk3/{dataset}/subsetting.tsv"
     conda: "envs/rules.yml"
     shell: """
       zcat {input} | awk 'BEGIN{{ FS="\\t" }}{{ if ($1 ~ /^#/) {{ print }} else {{ if ($5 != ".") print }} }}' | bgzip -c > {output}"""
@@ -207,12 +227,16 @@ rule gatk3_subsetting:
 rule gatk3_tabixing:
     input:"output/{dataset}/mapping/gatk3/realign_all_samples.vcf.gz"
     output:"output/{dataset}/mapping/gatk3/realign_all_samples.vcf.idx"
+    benchmark:  
+      "benchmarks/gatk3/{dataset}/tabix.tsv"
     conda: "envs/rules.yml"
     shell: "tabix -p vcf {input} > {output}"
 
 rule gatk3_tabixing2:
     input:"output/{dataset}/mapping/gatk3/realign_all_samples.all_sites.vcf.gz"
     output:"output/{dataset}/mapping/gatk3/realign_all_samples.all_sites.vcf.idx"
+    benchmark:  
+      "benchmarks/gatk3/{dataset}/tabix2.tsv"
     conda: "envs/rules.yml"
     shell: "tabix -p vcf {input} > {output}"
 
@@ -244,9 +268,10 @@ rule VEP:
   input:vcf="output/{dataset}/mapping/{gatk}/realign_all_samples.vcf.gz",
         fasta2=config["references"]["fasta2"],
         veppath=config["tools"]["vep"],
-        vepversion=config["parameters"]["vep-version"]
+  params:
+        vepvers=config["parameters"]["vep-version"]
   output:"output/{dataset}/mapping/{gatk}/realign_all_samples.vep.tsv.gz"
-  shell: """zcat {input.vcf} | scripts/processing/VCF2vepVCF.py | perl {input.veppath} --no_stats --fasta {input.fasta2} --quiet --buffer 2000 --cache --offline --species homo_sapiens --db_version={input.vepversion} --format vcf --symbol --hgvs --regulatory --gmaf --sift b --polyphen b --ccds --domains --numbers --canonical --shift_hgvs --output_file >( awk 'BEGIN{{ FS="\\t"; OFS="\\t"; }}{{ if ($1 ~ /^##/) {{ print }} else if ($1 ~ /^#/) {{ sub("^#","",$0); print "#Chrom","Start","End",$0 }} else {{ split($2,a,":"); if (a[2] ~ /-/) {{ split(a[2],b,"-"); print a[1],b[1],b[2],$0 }} else {{ print a[1],a[2],a[2],$0 }} }} }}' | grep -E "(^#|ENST00000360256|ENST00000218099)" | bgzip -c > {output} ) --force_overwrite
+  shell: """zcat {input.vcf} | scripts/processing/VCF2vepVCF.py | perl {input.veppath} --no_stats --fasta {input.fasta2} --quiet --buffer 2000 --cache --offline --species homo_sapiens --db_version={params.vepvers} --format vcf --symbol --hgvs --regulatory --gmaf --sift b --polyphen b --ccds --domains --numbers --canonical --shift_hgvs --output_file >( awk 'BEGIN{{ FS="\\t"; OFS="\\t"; }}{{ if ($1 ~ /^##/) {{ print }} else if ($1 ~ /^#/) {{ sub("^#","",$0); print "#Chrom","Start","End",$0 }} else {{ split($2,a,":"); if (a[2] ~ /-/) {{ split(a[2],b,"-"); print a[1],b[1],b[2],$0 }} else {{ print a[1],a[2],a[2],$0 }} }} }}' | grep -E "(^#|ENST00000360256|ENST00000218099)" | bgzip -c > {output} ) --force_overwrite
   """
 
 ##############################################

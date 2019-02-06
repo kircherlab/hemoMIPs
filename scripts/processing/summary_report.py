@@ -113,7 +113,7 @@ parser.add_option("-f", "--factor", dest="factor", help="Allowed deviation for M
 parser.add_option("-m","--mipstats", dest="mipstats", help="File with MIP performance counts (def 'realign_all_samples.MIPstats.tsv')",default="realign_all_samples.MIPstats.tsv")
 parser.add_option("-c","--indelCheck", dest="indelCheck", help="Only report indels with count evidence (def 'realign_all_samples.indel_check.txt')",default="realign_all_samples.indel_check.txt")
 parser.add_option("-d", "--design", dest="design", help="MIP design file (default hemomips_design.txt)",default="hemomips_design.txt")
-parser.add_option("--TG", dest="TG", help="1000 Genomes variant tabix file (def '/fast/groups/ag_kircher/CADD/cadd_v1.3/annotations/1000G/phase1_v3.20101123.vcf.gz')",default="/fast/groups/ag_kircher/CADD/cadd_v1.3/annotations/1000G/phase1_v3.20101123.vcf.gz")
+parser.add_option("--TG", dest="TG", help="1000 Genomes variant tabix file (def 'input/annotations/1000G/phase1_v3.20101123.vcf.gz')",default="input/annotations/1000G/phase1_v3.20101123.vcf.gz")
 #parser.add_option("--freq", dest="freq", help="Maximum 1000 Genomes allele frequency (def 0.05)",type="float",default=0.05)
 (options, args) = parser.parse_args()
 
