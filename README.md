@@ -28,7 +28,7 @@ Finally you can activate the environment via `source activate hemoMIPs`. Now the
 
 ### Shed Skin
 
-Shed Skin is an experimental compiler, that can translate pure, but implicitly statically typed Python (2.4-2.6) programs into optimized C++. To fasten the mapping process one of our python scripts have to be translated to C++ with Shed Skin.
+Shed Skin is an experimental compiler, that can translate pure, but implicitly statically typed Python (2.4-2.6) programs into optimized C++. To fasten the read overlapping process one of our python scripts have to be translated to C++ with Shed Skin.
 This will speed up the analysis drastically but is not crucial for the implementation.
 First we need an environment with python v2.6 and the requirements for Shed Skin. Therefore we created the environment file `envs/shedskin.yml`. Be sure that you are in your root hemoMIPs pipeline folder.
 
