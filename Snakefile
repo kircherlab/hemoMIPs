@@ -289,7 +289,8 @@ rule summaryreport_gatk4:
         indel="output/{dataset}/mapping/{gatk}/realign_all_samples.indel_check.txt",
         hemomips="input/{dataset}/hemomips_design.txt",
         tg=config["references"]["annotation"]
+        benign="input/{dataset}/benignVars.txt"
   output:
         folder=directory("output/{dataset}/{gatk}/report")
   conda: "envs/rules.yml"
-  shell: """scripts/processing/summary_report.py --vcf {input.vcf} --vep {input.vep} --inversions {input.inv} --sample_sex {input.sex} --target {input.target} --mipstats {input.mips} --indelCheck {input.indel} --design {input.hemomips} --TG {input.tg} && mv report/ {output.folder}"""
+  shell: """scripts/processing/summary_report.py --benign {input.benign} --vcf {input.vcf} --vep {input.vep} --inversions {input.inv} --sample_sex {input.sex} --target {input.target} --mipstats {input.mips} --indelCheck {input.indel} --design {input.hemomips} --TG {input.tg} && mv report/ {output.folder}"""
