@@ -2,7 +2,6 @@
 # -*- coding: ASCII -*-
 
 """
-
 :Author: Martin Kircher
 :Contact: mkircher@uw.edu
 :Date: *21.07.2016
@@ -19,7 +18,6 @@ from bx.intervals.intersection import Intersecter, Interval
 
 genomeBuild = "GRCh37"
 #commonVars = set(['rs6048','rs6049','rs1800291','rs1800292','rs1800297','rs1050705','rs1396947','rs440051'])
-benignVars = set(['X_138633280_A/G','X_138623355_A/G','X_154158285_G/C','X_154158201_T/G','X_154064200_C/T','X_154064580_T/C','X_138644917_G/A','X_154194886_C/T','X_154159851_G/A','X_154159104_C/T','X_154158444_G/A','X_154157565_C/T','X_154157330_T/C','X_154132301_G/T','X_154088758_G/A','X_154065843_G/A','X_154065794_G/A','X_154065446_C/T','X_154065069_T/G','X_138642995_T/C','X_138643939_A/G','X_138644836_G/A','X_138645058_GT/-','X_138645060_-/GT','X_138645149_T/C','X_138645157_G/C','X_154088838_T/C','X_154221432_G/A'])
 
 
 def prefix(alleles):
@@ -113,9 +111,23 @@ parser.add_option("-f", "--factor", dest="factor", help="Allowed deviation for M
 parser.add_option("-m","--mipstats", dest="mipstats", help="File with MIP performance counts (def 'realign_all_samples.MIPstats.tsv')",default="realign_all_samples.MIPstats.tsv")
 parser.add_option("-c","--indelCheck", dest="indelCheck", help="Only report indels with count evidence (def 'realign_all_samples.indel_check.txt')",default="realign_all_samples.indel_check.txt")
 parser.add_option("-d", "--design", dest="design", help="MIP design file (default hemomips_design.txt)",default="hemomips_design.txt")
-parser.add_option("--TG", dest="TG", help="1000 Genomes variant tabix file (def 'input/annotations/1000G/phase1_v3.20101123.vcf.gz')",default="input/annotations/1000G/phase1_v3.20101123.vcf.gz")
+parser.add_option("--TG", dest="TG", help="1000 Genomes variant tabix file" )
+parser.add_option("-b", "--benign",dest="benign", help="List of benign variants" )
 #parser.add_option("--freq", dest="freq", help="Maximum 1000 Genomes allele frequency (def 0.05)",type="float",default=0.05)
 (options, args) = parser.parse_args()
+
+#benignVars = set(['X_138633280_A/G','X_138623355_A/G','X_154158285_G/C','X_154158201_T/G','X_154064200_C/T','X_154064580_T/C','X_138644917_G/A','X_154194886_C/T','X_154159851_G/A','X_154159104_C/T','X_154158444_G/A','X_154157565_C/T','X_154157330_T/C','X_154132301_G/T','X_154088758_G/A','X_154065843_G/A','X_154065794_G/A','X_154065446_C/T','X_154065069_T/G','X_138642995_T/C','X_138643939_A/G','X_138644836_G/A','X_138645058_GT/-','X_138645060_-/GT','X_138645149_T/C','X_138645157_G/C','X_154088838_T/C','X_154221432_G/A'])
+
+benignVars = set()
+
+if os.path.exists(options.benign):
+  infile = open(options.benign)
+  for line in infile:
+    benignVars.add(line.rstrip()) 
+  infile.close()
+
+print benignVars
+
 
 sex_check = eval_sex_check(options.sample_sex)
 
