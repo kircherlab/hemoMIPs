@@ -118,7 +118,6 @@ parser.add_option("-b", "--benign",dest="benign", help="List of benign variants"
 #parser.add_option("--freq", dest="freq", help="Maximum 1000 Genomes allele frequency (def 0.05)",type="float",default=0.05)
 (options, args) = parser.parse_args()
 
-#benignVars = set(['X_138633280_A/G','X_138623355_A/G','X_154158285_G/C','X_154158201_T/G','X_154064200_C/T','X_154064580_T/C','X_138644917_G/A','X_154194886_C/T','X_154159851_G/A','X_154159104_C/T','X_154158444_G/A','X_154157565_C/T','X_154157330_T/C','X_154132301_G/T','X_154088758_G/A','X_154065843_G/A','X_154065794_G/A','X_154065446_C/T','X_154065069_T/G','X_138642995_T/C','X_138643939_A/G','X_138644836_G/A','X_138645058_GT/-','X_138645060_-/GT','X_138645149_T/C','X_138645157_G/C','X_154088838_T/C','X_154221432_G/A'])
 
 benignVars = set()
 
@@ -132,6 +131,9 @@ print benignVars
 
 
 sex_check = eval_sex_check(options.sample_sex)
+
+################################################################################################################################
+# Adapt these lines to specify the combinations of the Inversion based on the MIP design
 
 inversion_names = ["inv22_ID+IU","inv22_ED+2U","inv22_ED+3U","inv22_ID+2U","inv22_ID+3U","inv22_ED+IU","inv1_1IU+1ID","inv1_1IU+1ED"]
 INT22_inversion_types = [

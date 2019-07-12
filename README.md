@@ -134,6 +134,7 @@ Put your NGS fastq files in input/dataset* together with:
 - a coresponding barcode sample assignment file
 - the target coordinates of your MIPs
 - the target coordinates of the captured sequences
+- a file containing known benign variants
 
 example files can be found in the input/example_dataset folder
 
