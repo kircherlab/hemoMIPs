@@ -100,6 +100,8 @@ def percentile(vals,percentile):
   else:
     return sorted_values[min(int(round((len(sorted_values)-1)*percentile)),len(sorted_values)-1)]
 
+def cleanOtherAlleleString(helper):
+  return helper.replace(",<NON_REF>","").replace(",*","")
 
 parser = OptionParser("%prog [options]")
 parser.add_option("--vcf", dest="vcf", help="Filename of input multi-sample VCF file with all sites (def 'realign_all_samples.all_sites.vcf.gz')",default="realign_all_samples.all_sites.vcf.gz")
@@ -422,7 +424,7 @@ for line in infile:
         genes.add(gene_name)
         
       #VCFline = dict(zip(header,fields))
-      if (fields[falt].endswith('<NON_REF>')):
+      if ('<NON_REF>' in fields[falt]):
         is_gatk4 = True
         alleles = [fields[fref]]+fields[falt].split(',')[:-1]
       elif (fields[falt] != '.'):
@@ -440,7 +442,7 @@ for line in infile:
         for vline in finalVars:
           if vline.startswith('#'): continue
           vfields = vline.rstrip().split("\t")
-          varcalls_gatk4[(vfields[fchrom],vfields[fpos],vfields[fref],vfields[falt].replace(",<NON_REF>",""))]=vfields
+          varcalls_gatk4[(vfields[fchrom],vfields[fpos],vfields[fref])]=vfields
         finalVars.close()
         if (len(varcalls_gatk4) > 0):
           sys.stderr.write("Read %d variants from filtered variant output file (%s, assuming GATK 4).\n"%(len(varcalls_gatk4),finalVariantsFilename))
@@ -449,9 +451,11 @@ for line in infile:
       sample_GTs = []
       sample_coverages = []
       formatfields = fields[fformat].split(':')
+      #print fields[:10]
+      #print varcalls_gatk4[(fields[fchrom],fields[fpos],fields[fref])]
       for ind,individual in enumerate(individuals):
-        values = dict(zip(formatfields,fields[ind+findividual].split(':')))
-        if (fields[4] == '<NON_REF>') or (fields[4].endswith('<NON_REF>') and (fields[fchrom],fields[fpos],fields[fref],fields[falt].replace(",<NON_REF>","")) not in varcalls_gatk4): # HOMOZYGOTE REFERENCE CALLS GATK 4
+        values = dict(zip(formatfields[:len(fields[ind+findividual].split(':'))],fields[ind+findividual].split(':')[:len(formatfields)]))
+        if ('<NON_REF>' in fields[4]) and ((fields[fchrom],fields[fpos],fields[fref]) not in varcalls_gatk4): # HOMOZYGOTE REFERENCE CALLS GATK 4
             if ('DP' in values) and (int(values['DP']) >= 3):
               sample_GTs.append(1)
               count_GT += 1
@@ -459,17 +463,14 @@ for line in infile:
             else:
               sample_GTs.append(0)
               sample_coverages.append(0)
-        elif ((fields[fchrom],fields[fpos],fields[fref],fields[falt].replace(",<NON_REF>","")) in varcalls_gatk4) or fields[ind+findividual] != "./.": # COMPATIBILITY WITH GATK 3
+        elif ((fields[fchrom],fields[fpos],fields[fref]) in varcalls_gatk4) or fields[ind+findividual] != "./.": # COMPATIBILITY WITH GATK 3
           callQual = fields[fqual]
-          if (fields[fchrom],fields[fpos],fields[fref],fields[falt].replace(",<NON_REF>","")) in varcalls_gatk4:
-            vfields = varcalls_gatk4[(fields[fchrom],fields[fpos],fields[fref],fields[falt].replace(",<NON_REF>",""))]
-            if vfields[falt].endswith("<NON_REF>"):
-              alleles = [vfields[fref]]+vfields[falt].split(',')[:-1]
-            else:
-              alleles = [vfields[fref]]+vfields[falt].split(',')
+          if (fields[fchrom],fields[fpos],fields[fref]) in varcalls_gatk4:
+            vfields = varcalls_gatk4[(fields[fchrom],fields[fpos],fields[fref])]
+            alleles = [vfields[fref]]+cleanOtherAlleleString(vfields[falt]).split(',')
             allele_dict = dict(map(lambda (x,y):(str(x),y), enumerate(alleles)))
             callQual = vfields[fqual]
-            values = dict(zip(vfields[fformat].split(":"),vfields[ind+findividual].split(':')))
+            values = dict(zip(vfields[fformat].split(":")[:len(vfields[ind+findividual].split(':'))],vfields[ind+findividual].split(':')[:len(vfields[fformat].split(":"))]))
           if (('AD' in values) and ('GT' in values) and (sum(map(lambda x: 0 if not x.isdigit() else int(x),values['AD'].split(","))) >= 3)) or (('AD' not in values) and ('GT' in values) and ('DP' in values) and values['DP'].isdigit() and (int(values['DP']) >= 3)):
             obsalleles = []
             sample_GTs.append(1)
@@ -506,7 +507,7 @@ for line in infile:
                 if varstring not in VEP: 
                   varstring = "%s_%s_%d_%s/%s"%(genomeBuild,fields[fchrom],int(ppos)+pfix,pref[pfix:],"-")
                 if varstring not in VEP:
-                  sys.stderr.write("Can not retrieve variant from VEP output %s_%s_%s/%s\n"%(genomeBuild,fields[fchrom],fields[fpos],pref,palt))
+                  sys.stderr.write("Can not retrieve variant from VEP output %s_%s_%s_%s/%s\n"%(genomeBuild,fields[fchrom],fields[fpos],pref,palt))
                   continue
                 
                 if varObs != None and float(varObs)/int(values['DP']) < 0.05: continue

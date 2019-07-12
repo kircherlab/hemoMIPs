@@ -145,10 +145,8 @@ rule gatk4_HTcaller:
   output:
     bamout="output/{dataset}/mapping/gatk4/realign_all_samples.bam",
     vcf="output/{dataset}/mapping/gatk4/bam.vcf.gz"
-  benchmark:  
-    repeat("benchmarks/gatk4/{dataset}/HTcaller.tsv",2)
   conda:"envs/python3gatk4.yml"
-  shell: "gatk HaplotypeCaller -R {input.fasta} -L {input.targets} $(ls -1 {input.bamin} | xargs -n 1 echo -I ) --output-mode EMIT_ALL_SITES -bamout {output.bamout} -O {output.vcf} --disable-optimizations"
+  shell: "gatk HaplotypeCaller -R {input.fasta} -L {input.targets} $(ls -1 {input.bamin} | xargs -n 1 echo -I ) --genotyping-mode DISCOVERY --output-mode EMIT_ALL_SITES -bamout {output.bamout} -O {output.vcf} --disable-optimizations"
 
 rule gatk4_gvcfs:
   input:
@@ -159,14 +157,11 @@ rule gatk4_gvcfs:
     idx="output/{dataset}/mapping/aligned/{plate}.bai",
   output:
     vcfgz="output/{dataset}/mapping/gatk4/gvcf/{plate}.g.vcf.gz"
-  benchmark:  
-    repeat("benchmarks/gatk4/{dataset}/{plate}/gvcfs.tsv",2)
   params:
     plate="{plate}"
   conda:"envs/python3gatk4.yml"
   shell:"""
-    gatk --java-options "-Xmx8G" HaplotypeCaller --max-reads-per-alignment-start 0 --disable-optimizations \
-    --sample-name {params.plate} -ERC GVCF -R {input.fasta} -I {input.bam} -L {input.targets} -O {output.vcfgz}
+    gatk --java-options "-Xmx8G" HaplotypeCaller --max-reads-per-alignment-start 0 --kmer-size 10 --kmer-size 11 --kmer-size 12 --kmer-size 13 --kmer-size 14 --kmer-size 15 --kmer-size 25 --kmer-size 35 --max-num-haplotypes-in-population 512 --sample-name {params.plate} -ERC GVCF -R {input.fasta} -I {input.bam} -L {input.targets} -O {output.vcfgz}
     """
 
 def sampleBamsInversion(wc):
@@ -176,8 +171,6 @@ rule gatk4_combine:
   input:fasta=config["references"]["fasta"],
         gvcf=sampleBamsInversion
   output:bamout="output/{dataset}/mapping/gatk4/realign_all_samples.all_sites.vcf.gz"
-  benchmark:  
-    repeat("benchmarks/gatk4/{dataset}/gvcf_combine.tsv",2)
   conda:"envs/python3gatk4.yml"
   shell:"gatk CombineGVCFs --break-bands-at-multiples-of 1 -R {input.fasta} $(ls -1 {input.gvcf} | xargs -n 1 echo -V ) -O {output.bamout}"
 
@@ -187,8 +180,6 @@ rule gatk4_genotype:
     fasta=config["references"]["fasta"],
     vcf="output/{dataset}/mapping/gatk4/realign_all_samples.all_sites.vcf.gz"
   output:"output/{dataset}/mapping/gatk4/realign_all_samples.vcf.gz"
-  benchmark:  
-    repeat("benchmarks/gatk4/{dataset}/genotype.tsv",2)
   conda:"envs/python3gatk4.yml"
   shell:"gatk GenotypeGVCFs -R {input.fasta} -V {input.vcf} -O {output}"
 
@@ -200,8 +191,6 @@ rule gatk3_realign:
     fasta=config["references"]["fasta"],
     intervals="input/{dataset}/targets_split.intervals"
   output:"output/{dataset}/mapping/gatk3/realign_all_samples.bam"
-  benchmark:  
-    "benchmarks/gatk3/{dataset}/realign.tsv"
   shell: "java -Xmx8G -jar tools/GATK322/GenomeAnalysisTK.jar -T IndelRealigner -R {input.fasta} -DBQ 3 -filterNoBases -maxReads 1500000 -maxInMemory 1500000 -targetIntervals {input.intervals} $(ls -1 {input.bam} | xargs -n 1 echo -I ) -o {output} -dt BY_SAMPLE -dcov 500"
 
 rule gatk3_genotyping:
@@ -209,16 +198,12 @@ rule gatk3_genotyping:
         targets="input/{dataset}/targets.intervals",
         fasta=config["references"]["fasta"]
   output:"output/{dataset}/mapping/gatk3/realign_all_samples.all_sites.vcf.gz"
-  benchmark:  
-    "benchmarks/gatk3/{dataset}/genotyping.tsv"
   conda: "envs/rules.yml"
   shell: "java -Xmx6G -jar tools/GATK3446/GenomeAnalysisTK.jar -T UnifiedGenotyper -R {input.fasta} -I {input.bam} -L {input.targets} -o >( bgzip -c > {output} ) -glm BOTH -rf BadCigar --max_alternate_alleles 15 --output_mode EMIT_ALL_SITES -dt NONE"
 
 rule gatk3_subsetting:
     input:"output/{dataset}/mapping/gatk3/realign_all_samples.all_sites.vcf.gz"
     output:"output/{dataset}/mapping/gatk3/realign_all_samples.vcf.gz"
-    benchmark:  
-      "benchmarks/gatk3/{dataset}/subsetting.tsv"
     conda: "envs/rules.yml"
     shell: """
       zcat {input} | awk 'BEGIN{{ FS="\\t" }}{{ if ($1 ~ /^#/) {{ print }} else {{ if ($5 != ".") print }} }}' | bgzip -c > {output}"""
@@ -227,16 +212,12 @@ rule gatk3_subsetting:
 rule gatk3_tabixing:
     input:"output/{dataset}/mapping/gatk3/realign_all_samples.vcf.gz"
     output:"output/{dataset}/mapping/gatk3/realign_all_samples.vcf.idx"
-    benchmark:  
-      "benchmarks/gatk3/{dataset}/tabix.tsv"
     conda: "envs/rules.yml"
     shell: "tabix -p vcf {input} > {output}"
 
 rule gatk3_tabixing2:
     input:"output/{dataset}/mapping/gatk3/realign_all_samples.all_sites.vcf.gz"
     output:"output/{dataset}/mapping/gatk3/realign_all_samples.all_sites.vcf.idx"
-    benchmark:  
-      "benchmarks/gatk3/{dataset}/tabix2.tsv"
     conda: "envs/rules.yml"
     shell: "tabix -p vcf {input} > {output}"
 
@@ -252,12 +233,12 @@ rule MIPstats:
   conda: "envs/rules.yml"
   shell:"scripts/pipeline2.0/MIPstats.py {input} -o {output}"
 
-rule checkPileUp:
-  input: bam="output/{dataset}/mapping/{gatk}/realign_all_samples.bam",
-         sites="output/{dataset}/mapping/{gatk}/realign_all_samples.vcf.gz"
-  output:"output/{dataset}/mapping/{gatk}/realign_all_samples.indel_check.txt"
-  conda: "envs/rules.yml"
-  shell: "scripts/processing/checkPileUpAtInDels.py -b {input.bam} -s {input.sites} -o {output}"
+#rule checkPileUp:
+#  input: bam="output/{dataset}/mapping/{gatk}/realign_all_samples.bam",
+#         sites="output/{dataset}/mapping/{gatk}/realign_all_samples.vcf.gz"
+#  output:"output/{dataset}/mapping/{gatk}/realign_all_samples.indel_check.txt"
+#  conda: "envs/rules.yml"
+#  shell: "scripts/processing/checkPileUpAtInDels.py -b {input.bam} -s {input.sites} -o {output}"
 
 ##############################################
 # VEP
@@ -280,18 +261,36 @@ rule VEP:
 
 
 rule summaryreport_gatk4:
-  input:vcf="output/{dataset}/mapping/{gatk}/realign_all_samples.all_sites.vcf.gz",
-        vep="output/{dataset}/mapping/{gatk}/realign_all_samples.vep.tsv.gz",
+  input:vcf="output/{dataset}/mapping/gatk4/realign_all_samples.all_sites.vcf.gz",
+        vep="output/{dataset}/mapping/gatk4/realign_all_samples.vep.tsv.gz",
         inv="output/{dataset}/mapping/inversion_mips/inversion_summary_counts.txt",
         sex="output/{dataset}/samples_sex_check.txt",
         target="input/{dataset}/target_coords.bed",
-        mips="output/{dataset}/mapping/{gatk}/realign_all_samples.MIPstats.tsv",
-        indel="output/{dataset}/mapping/{gatk}/realign_all_samples.indel_check.txt",
+        mips="output/{dataset}/mapping/gatk4/realign_all_samples.MIPstats.tsv",
         hemomips="input/{dataset}/hemomips_design.txt",
         tg=config["references"]["annotation"],
         benign="input/{dataset}/benignVars.txt"
   output:
-        folder=directory("output/{dataset}/{gatk}/report")
+        folder=directory("output/{dataset}/gatk4/report")
+  conda: "envs/rules.yml"
+  shell: """scripts/processing/summary_report.py --benign {input.benign} --vcf {input.vcf} --vep {input.vep} --inversions {input.inv} --sample_sex {input.sex} --target {input.target} --mipstats {input.mips} --design {input.hemomips} --TG {input.tg} && mv report/ {output.folder}
+  """
+
+##/
+rule summaryreport_gatk3:
+  input:vcf="output/{dataset}/mapping/gatk3/realign_all_samples.all_sites.vcf.gz",
+        vep="output/{dataset}/mapping/gatk3/realign_all_samples.vep.tsv.gz",
+        inv="output/{dataset}/mapping/inversion_mips/inversion_summary_counts.txt",
+        sex="output/{dataset}/samples_sex_check.txt",
+        target="input/{dataset}/target_coords.bed",
+        mips="output/{dataset}/mapping/gatk4/realign_all_samples.MIPstats.tsv",
+        indel="output/{dataset}/mapping/gatk3/realign_all_samples.indel_check.txt",
+        hemomips="input/{dataset}/hemomips_design.txt",
+        tg=config["references"]["annotation"],
+        benign="input/{dataset}/benignVars.txt"
+  output:
+        folder=directory("output/{dataset}/gatk3/report")
   conda: "envs/rules.yml"
   shell: """scripts/processing/summary_report.py --benign {input.benign} --vcf {input.vcf} --vep {input.vep} --inversions {input.inv} --sample_sex {input.sex} --target {input.target} --mipstats {input.mips} --indelCheck {input.indel} --design {input.hemomips} --TG {input.tg} && mv report/ {output.folder}
   """
+
