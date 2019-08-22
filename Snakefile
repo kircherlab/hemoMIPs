@@ -161,7 +161,7 @@ rule gatk4_gvcfs:
     plate="{plate}"
   conda:"envs/python3gatk4.yml"
   shell:"""
-    gatk --java-options "-Xmx8G" HaplotypeCaller --max-reads-per-alignment-start 0 --kmer-size 10 --kmer-size 11 --kmer-size 12 --kmer-size 13 --kmer-size 14 --kmer-size 15 --kmer-size 25 --kmer-size 35 --max-num-haplotypes-in-population 512 --sample-name {params.plate} -ERC GVCF -R {input.fasta} -I {input.bam} -L {input.targets} -O {output.vcfgz}
+    gatk --java-options "-Xmx8G" HaplotypeCaller --min-base-quality-score 5 --base-quality-score-threshold 6 --max-reads-per-alignment-start 0 --kmer-size 10 --kmer-size 11 --kmer-size 12 --kmer-size 13 --kmer-size 14 --kmer-size 15 --kmer-size 25 --kmer-size 35 --max-num-haplotypes-in-population 512 --sample-name {params.plate} -ERC GVCF -R {input.fasta} -I {input.bam} -L {input.targets} -O {output.vcfgz}
     """
 
 def sampleBamsInversion(wc):
@@ -181,7 +181,7 @@ rule gatk4_genotype:
     vcf="output/{dataset}/mapping/gatk4/realign_all_samples.all_sites.vcf.gz"
   output:"output/{dataset}/mapping/gatk4/realign_all_samples.vcf.gz"
   conda:"envs/python3gatk4.yml"
-  shell:"gatk GenotypeGVCFs -R {input.fasta} -V {input.vcf} -O {output}"
+  shell:"gatk GenotypeGVCFs --standard-min-confidence-threshold-for-calling 10 -R {input.fasta} -V {input.vcf} -O {output}"
 
 # GATK3
 
