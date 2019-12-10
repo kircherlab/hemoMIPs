@@ -1,8 +1,6 @@
 ---
 datasets: 
-   dataset1:
-      lanes: [1,2,3,4]
-   dataset2:
+   example_dataset:
       lanes: [1]
       
 references:
@@ -12,13 +10,11 @@ references:
    annotation: "/{annotation-path}"
    fasta2: "/{homosapiens-toplevel-path}"
 
-shedskin: "/{shedskin-configuration-path"
-
 tools:
-   vep: "/{vep-installation-path}"
+   vep_cache: "/{vep-cache_homosapiens_98}"
 
 parameters:
-   vep-version: "two digit number of vep database version {recommended version 77}"
+   vep-version: "two digit number of vep database version {recommended version 98}"
 
 GATK:
   - gatk4
