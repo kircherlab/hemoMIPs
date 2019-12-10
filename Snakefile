@@ -4,7 +4,7 @@ localrules: all
 
 rule all:
   input:
-    expand(directory("output/{dataset}/{gatk}/report"),gatk=config["GATK"],dataset=config["datasets"].keys())
+    directory(expand("output/{dataset}/report/{gatk}",gatk=config["GATK"],dataset=config["datasets"].keys()))
 
 rule splithemophilia:
   input:
@@ -19,8 +19,8 @@ rule splithemophilia:
   conda: "envs/rules.yml"
   shell:"""
     ( paste <( zcat {input.R1} | cut -c 1-120 ) \
-      <( zcat {input.I} ) \
-      <( zcat {input.R2} | cut -c 1-120 ) | \
+    <( zcat {input.I} ) \
+    <( zcat {input.R2} | cut -c 1-120 ) | \
     awk '{{ count+=1; if ((count == 1) || (count == 3)) {{ print $1 }} else {{ print $1$2$3 }}; if (count == 4) {{ count=0 }} }}' | \
     scripts/pipeline2.0/SplitFastQdoubleIndexBAM.py --bases_after_index=ATCTCGTATGCCGTCTTCTGCTTG --bases_after_2ndindex='' -l 10 -m 0 -s 131 --summary -i {input.lst} -q 10 -p --remove | scripts/pipeline2.0/MergeTrimReadsBAM.py --mergeoverlap -p \
     > {output.bam} ) 2> {log}
@@ -248,11 +248,12 @@ rule MIPstats:
 rule VEP:
   input:vcf="output/{dataset}/mapping/{gatk}/realign_all_samples.vcf.gz",
         fasta2=config["references"]["fasta2"],
-        veppath=config["tools"]["vep"],
+        cache=config["tools"]["vep_cache"]
   params:
         vepvers=config["parameters"]["vep-version"]
+  conda: "envs/vep-env.yml"
   output:"output/{dataset}/mapping/{gatk}/realign_all_samples.vep.tsv.gz"
-  shell: """zcat {input.vcf} | scripts/processing/VCF2vepVCF.py | perl {input.veppath} --no_stats --fasta {input.fasta2} --quiet --buffer 2000 --cache --offline --species homo_sapiens --db_version={params.vepvers} --format vcf --symbol --hgvs --regulatory --gmaf --sift b --polyphen b --ccds --domains --numbers --canonical --shift_hgvs --output_file >( awk 'BEGIN{{ FS="\\t"; OFS="\\t"; }}{{ if ($1 ~ /^##/) {{ print }} else if ($1 ~ /^#/) {{ sub("^#","",$0); print "#Chrom","Start","End",$0 }} else {{ split($2,a,":"); if (a[2] ~ /-/) {{ split(a[2],b,"-"); print a[1],b[1],b[2],$0 }} else {{ print a[1],a[2],a[2],$0 }} }} }}' | grep -E "(^#|ENST00000360256|ENST00000218099)" | bgzip -c > {output} ) --force_overwrite
+  shell: """zcat {input.vcf} | scripts/processing/VCF2vepVCF.py | vep --no_stats --fasta {input.fasta2} --quiet --buffer 2000 --dir_cache {input.cache} --cache --offline --db_version={params.vepvers} --species homo_sapiens --db_version=98 --format vcf --symbol --hgvs --regulatory --af --sift b --polyphen b --ccds --domains --numbers --canonical --shift_hgvs 1 --output_file >( awk 'BEGIN{{ FS="\\t"; OFS="\\t"; }}{{ if ($1 ~ /^##/) {{ print }} else if ($1 ~ /^#/) {{ sub("^#","",$0); print "#Chrom","Start","End",$0 }} else {{ split($2,a,":"); if (a[2] ~ /-/) {{ split(a[2],b,"-"); print a[1],b[1],b[2],$0 }} else {{ print a[1],a[2],a[2],$0 }} }} }}' | grep -E "(^#|ENST00000360256|ENST00000218099)" | bgzip -c > {output} ) --force_overwrite
   """
 
 ##############################################
@@ -271,7 +272,7 @@ rule summaryreport_gatk4:
         tg=config["references"]["annotation"],
         benign="input/{dataset}/benignVars.txt"
   output:
-        folder=directory("output/{dataset}/gatk4/report")
+        folder=directory("output/{dataset}/report/gatk4")
   conda: "envs/rules.yml"
   shell: """scripts/processing/summary_report.py --benign {input.benign} --vcf {input.vcf} --vep {input.vep} --inversions {input.inv} --sample_sex {input.sex} --target {input.target} --mipstats {input.mips} --design {input.hemomips} --TG {input.tg} && mv report/ {output.folder}
   """
@@ -283,13 +284,13 @@ rule summaryreport_gatk3:
         inv="output/{dataset}/mapping/inversion_mips/inversion_summary_counts.txt",
         sex="output/{dataset}/samples_sex_check.txt",
         target="input/{dataset}/target_coords.bed",
-        mips="output/{dataset}/mapping/gatk4/realign_all_samples.MIPstats.tsv",
+        mips="output/{dataset}/mapping/gatk3/realign_all_samples.MIPstats.tsv",
         indel="output/{dataset}/mapping/gatk3/realign_all_samples.indel_check.txt",
         hemomips="input/{dataset}/hemomips_design.txt",
         tg=config["references"]["annotation"],
         benign="input/{dataset}/benignVars.txt"
   output:
-        folder=directory("output/{dataset}/gatk3/report")
+        folder=directory("output/{dataset}/report/gatk3")
   conda: "envs/rules.yml"
   shell: """scripts/processing/summary_report.py --benign {input.benign} --vcf {input.vcf} --vep {input.vep} --inversions {input.inv} --sample_sex {input.sex} --target {input.target} --mipstats {input.mips} --indelCheck {input.indel} --design {input.hemomips} --TG {input.tg} && mv report/ {output.folder}
   """
