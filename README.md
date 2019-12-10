@@ -5,9 +5,9 @@ The hemoMIPs pipeline is a fast and efficient analysis pipeline for MIP targeted
 ## Pre-requirements
 =======
 
-module load python/2.7.3
-module load pysam/0.7.5
-module load gmp/5.0.2 mpfr/3.1.0 mpc/0.8.2 gcc/4.9.1
+module load python/2.7.3 \
+module load pysam/0.7.5 \
+module load gmp/5.0.2 mpfr/3.1.0 mpc/0.8.2 gcc/4.9.1 \
 
 
 ### Conda
@@ -33,23 +33,24 @@ conda env create -n vep-env --file envs/vep-env.yaml
 
 source activate vep-env
 ```
-Adjust the Path to your Pipeline location and run:
-This can take a while.
+Adjust the Path to your pipeline location. This command will download the human VEP cache which is 14G.  \
+This can take a while. \
+If you already have the VEP database, simply adjust the path to your database in the config.yml. Note that we run the pipeline using VEP v98.
+
 
 ```bash
 vep_install -a cf -s homo_sapiens -y GRCh37 -c /~PathTo~/hemoMIPs/vep –CONVERT
 ```
 
-If you already have the VEP database, simply adjust the path to your database in the config.yml. Note that we run the pipeline using VEP v98.
 
 
 ## Config
 
-Almost ready to go:
+Almost ready to go: \
 We are aligning against the 1000 Genomes phase 2 build of the human reference: ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/technical/reference/phase2_reference_assembly_sequence/ \
-You also need the bwa index of this file.
-VEP uses following reference genome file: ftp://ftp.ensembl.org/pub/release-72/fasta/homo_sapiens/dna/Homo_sapiens.GRCh37.72.dna.toplevel.fa.gz
-We also add the CADD annotation cadd_v1.3 phase1_v3.20101123.vcf.gz to be found https://cadd.gs.washington.edu/download
+You also need the bwa index of this file. \
+VEP uses following reference genome file: ftp://ftp.ensembl.org/pub/release-72/fasta/homo_sapiens/dna/Homo_sapiens.GRCh37.72.dna.toplevel.fa.gz \
+We also add the CADD annotation cadd_v1.3 phase1_v3.20101123.vcf.gz to be found https://cadd.gs.washington.edu/download \
 
 Finally: Set the Paths and parameters in your config. You can find a template named "config.yml".
 
