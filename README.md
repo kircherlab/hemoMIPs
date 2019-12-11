@@ -12,7 +12,7 @@ https://conda.io/docs/user-guide/install/index.html
 
 ### Snakemake
 
-Next, you just have to install Snakemake using Conda. This can be done by creating the main environment to run the hemoMIPs pipeline via Snakemake:
+Next, you just have to install Snakemake using Conda. This can be done by creating the main environment to run the hemoMIPs environment which contains snakemake using the following command:
 
 ```bash
 conda env create -n hemoMIPs --file environment.yaml
@@ -20,14 +20,14 @@ conda env create -n hemoMIPs --file environment.yaml
 
 ### ensembl-vep
 
-We use ensemble Variant Effect Predictor to predict variant effects. To install vep run:
+We use Ensembl Variant Effect Predictor to predict variant effects. To install vep run:
 
 ```bash
 conda env create -n vep-env --file envs/vep-env.yml
 
 conda activate vep-env
 ```
-Adjust the Path to your pipeline location of the following comand. This command will download the human VEP cache which is 14G.  \
+Adjust the Path to your pipeline location of the following command. This command will download the human VEP cache which is 14G.  \
 This can take a while. \
 If you already have the VEP database, simply adjust the path to your database in the config.yml. Note that we run the pipeline using VEP v98.
 
@@ -41,9 +41,10 @@ vep_install -a cf -s homo_sapiens -y GRCh37 -c /~PathTo~/hemoMIPs/vep –CONVERT
 ## Config
 
 Almost ready to go:
-You need to download the human reference and other files to run the pipeline and adjust the locations of these files in the `config.yml`\
-An example config can be found in `example_config.yml` \
-We are aligning against the 1000 Genomes phase 2 build of the human reference: \
+You need to download the human reference and other files to run the pipeline and adjust the locations of these files in the `config.yml`.\
+An example config can be found in `example_config.yml`. \
+ \
+We are aligning against the 1000 Genomes phase 2 build of the human reference `hs37d5.fa.gz`: \
 `ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/technical/reference/phase2_reference_assembly_sequence/` \
 You also need the bwa index of this file. \
 We also add the CADD annotation cadd_v1.3 phase1_v3.20101123.vcf.gz to be found here: \
