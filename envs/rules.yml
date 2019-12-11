@@ -8,7 +8,7 @@ dependencies:
   # shedskin compiled scripts dependencies
   - bdw-gc=7.6.4
   - pcre
-  - bwa=0.7.10
+  - bwa=0.7.15
   # Script dependencies
   - python=2.7
   - samtools=1.7
