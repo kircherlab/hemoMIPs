@@ -9,7 +9,7 @@ dependencies:
   - bdw-gc=7.6.4
   - pcre
   # Script dependencies
-  - bwa=0.7.8
+  - bwa=0.7.15
   - python=2.7
   - samtools=1.7
   - bzip2=1.0.6
