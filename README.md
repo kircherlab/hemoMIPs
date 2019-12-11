@@ -47,7 +47,7 @@ We are aligning against the 1000 Genomes phase 2 build of the human reference: \
 `ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/technical/reference/phase2_reference_assembly_sequence/` \
 You also need the bwa index of this file. \
 We also add the CADD annotation cadd_v1.3 phase1_v3.20101123.vcf.gz to be found here: \
-`https://cadd.gs.washington.edu/download` 
+`https://cadd.gs.washington.edu/download` \
 VEP uses following reference genome file: \
 `ftp://ftp.ensembl.org/pub/release-72/fasta/homo_sapiens/dna/Homo_sapiens.GRCh37.72.dna.toplevel.fa.gz` \
 
