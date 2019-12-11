@@ -1,0 +1,30 @@
+{ "__default__" : 
+  {
+    "time" : "08:00:00",
+    "threads" : 1,
+    "mem" : "16G",
+    "queue" : "medium",
+    "logs" : "/~path-to~/sge_logs",
+    "err" : "/~path-to~/sge_logs"
+  },
+  "gatk3_realign":
+  {
+    "time" : "24:00:00",
+    "mem" : "20G"
+  },
+   "gatk3_genotyping":
+  {
+    "time" : "24:00:00",
+    "mem" : "20G"
+  },
+ 
+  "gatk4_HTcaller":
+  {
+    "mem" : "20G"
+  },
+  "splithemophilia" : 
+  {
+    "time" : "48:00:00",
+    "mem" : "20G"   
+  }
+}
