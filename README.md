@@ -67,7 +67,7 @@ Put your NGS fastq files in input/ together with:
 
 ## Run pipeline
 
-Ready to go!
+Ready to go! If you run the pipeline on a cluster see the `cluster.json` for an estimate of minimum requirements for the individual jobs.
 
 ```bash
 conda activate hemoMIPs
