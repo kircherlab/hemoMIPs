@@ -1,6 +1,5 @@
 name: vep-env
 channels:
-  - Judowill
   - bioconda
   - conda-forge
   - defaults
