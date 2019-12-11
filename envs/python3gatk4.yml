@@ -1,6 +1,5 @@
 name: python3
 channels:
-  - Judowill
   - bioconda
   - conda-forge
   - defaults
