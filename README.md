@@ -5,11 +5,6 @@ The hemoMIPs pipeline is a fast and efficient analysis pipeline for MIP targeted
 ## Pre-requirements
 =======
 
-module load python/2.7.3 \
-module load pysam/0.7.5 \
-module load gmp/5.0.2 mpfr/3.1.0 mpc/0.8.2 gcc/4.9.1 \
-
-
 ### Conda
 
 The pipeline depends on snakemake (that wraps up the scripts and runs them highly automated). We use Conda as environment managment software. Conda can install snakemake itself and the neccessary software with all its dependencies automatically. Conda installation guidlines can be found here:
@@ -29,9 +24,9 @@ conda env create -n hemoMIPs --file environment.yaml
 We use ensemble Variant Effect Predictor to predict variant effects. To install vep run:
 
 ```bash
-conda env create -n vep-env --file envs/vep-env.yaml
+conda env create -n vep-env --file envs/vep-env.yml
 
-source activate vep-env
+conda activate vep-env
 ```
 Adjust the Path to your pipeline location. This command will download the human VEP cache which is 14G.  \
 This can take a while. \
@@ -73,7 +68,7 @@ example files can be found in the input/example_dataset folder
 Ready to go!
 
 ```bash
-source activate hemoMIPs
+conda activate hemoMIPs
 # dry run to see if everything works
 snakemake  --use-conda --configfile config.yml -n
 # run the pipeline
@@ -114,7 +109,7 @@ export LD_LIBRARY_PATH="$HOME/miniconda3/envs/shedskin/lib:$LD_LIBRARY_PATH"' > 
 echo '#!/bin/sh
 unset LD_LIBRARY_PATH' > ~/miniconda3/envs/shedskin/etc/conda/deactivate.d/env_vars.sh
 
-source activate shedskin
+conda activate shedskin
 ```
 Then download and install Shed Skin v0.9.4 into the bin directory of the hemoMIPs pipeline.
 
