@@ -107,7 +107,7 @@ def makeNewRead(trim,loff,newCigar,read,trim2=None,MIPid=None):
 parser = OptionParser("%prog [options] BAMfile")
 parser.add_option("-p","--PIPE",dest="pipe",help="Read BAM from and write to PIPE",default=False,action="store_true")
 parser.add_option("-o", "--outfile", dest="outfile", help="Name of output file (def trimMIParms.bam)",default="trimMIParms.bam")
-parser.add_option("-d", "--design", dest="design", help="MIP design file (default /net/shendure/vol1/home/mkircher/hemophilia/hemomips_design_file_updated.txt)",default="/net/shendure/vol1/home/mkircher/hemophilia/hemomips_design_file_updated.txt")
+parser.add_option("-d", "--design", dest="design", help="MIP design file")
 parser.add_option("-v", "--verbose", dest="verbose", help="Turn all messages on",default=False,action="store_true")
 (options, args) = parser.parse_args()
 
