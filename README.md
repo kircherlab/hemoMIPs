@@ -48,12 +48,8 @@ We are aligning against the 1000 Genomes phase 2 build of the human reference `h
 `wget ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/technical/reference/phase2_reference_assembly_sequence/hs37d5.fa.gz` \
 `wget ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/technical/reference/phase2_reference_assembly_sequence/hs37d5.fa.gz.fai` \
 You also need the bwa index of this file. \
-```bash
-conda env create -n rules --file envs/rules.yml
-conda activate rules
+See https://gatkforums.broadinstitute.org/gatk/discussion/2798/howto-prepare-a-reference-for-use-with-bwa-and-gatk\
 
-bwa index -a bwtsw hs37d5.fa.gz
-```
 We also add the CADD annotation cadd_v1.3 phase1_v3.20101123.vcf.gz to be found here: \
 `https://cadd.gs.washington.edu/download` \
 VEP uses following reference genome file: \
