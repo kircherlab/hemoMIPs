@@ -77,6 +77,7 @@ Put your NGS fastq files in input/ together with:
 ## Run pipeline
 
 Ready to go! If you run the pipeline on a cluster see the `cluster.json` for an estimate of minimum requirements for the individual jobs. Note that this depends on your dataset size so you may have to adjust this.
+To start the pipeline:
 
 ```bash
 conda activate hemoMIPs
@@ -86,7 +87,7 @@ snakemake  --use-conda --configfile example_config.yml -n
 snakemake  --use-conda --configfile example_config.yml
 ```
 
-
+We added an example_results folder to enable the user to compare the output of the example_dataset analysis to our results.
 
 
 
