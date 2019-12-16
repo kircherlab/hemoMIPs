@@ -4,4 +4,4 @@ channels:
   - conda-forge
   - defaults
 dependencies:
-  - ensembl-vep=98.3=pl526hecc5488_0
+  - ensembl-vep=98.3
