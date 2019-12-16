@@ -8,8 +8,8 @@ datasets:
 references:
    fasta: "/{reference-path-1000G-phase2-human-reference}"
    bwa: "/{bwa-indexed-reference-path-of-1000G-phase2-human-reference}" # can be the same as "fasta" depending where your BWA index files are
-   inv: "/input/example_dataset/hemomips_inv_ref.fa" #{path-to-inversion-fasta-file-for-inversion-detection}
-   annotation: "/input/example_dataset/phase1_release_v3.20101123.snps_indels_svs.on_target.vcf.gz"
+   inv: "input/example_dataset/hemomips_inv_ref.fa" #{path-to-inversion-fasta-file-for-inversion-detection}
+   annotation: "input/example_dataset/phase1_release_v3.20101123.snps_indels_svs.on_target.vcf.gz"
    fasta2: "/{path-to-ensembl-homosapiens-toplevel/Homo_sapiens.GRCh37.72.dna.toplevel.fa.gz}"
 
 tools:
