@@ -1,0 +1,109 @@
+<html>
+ <head>
+  <title>Report for Sample1</title>
+ </head>
+<body>
+<p align="center"><h1>Report for Sample1</h1></p>
+<p>Sex determined from SRY MIPs: <strong>F (SRY/Total: 0/9170 = 0.00%)</strong></p>
+<p>Number of target region performance outlier MIPs: <strong>0</strong></p>
+<p>Number of sites with GTs: <strong>12932 (100.00%)</strong></p>
+<p>Number of sites with GTs [F8]: <strong>9846 (100.00%)</strong></p>
+<p>Number of sites with GTs [F9]: <strong>3086 (100.00%)</strong></p>
+<p>Average coverage: <strong>46.67</strong></p>
+<p>Average coverage of GT calls: <strong>46.67</strong></p>
+<p>Number of hets called: <strong>1</strong></p>
+<p>Number of short variants called: <strong>3</strong></p>
+<p>Number of low quality variants not counted above: <strong>0</strong></p>
+<p></p>
+<p><h2>Variants identified in target region:</h2></p>
+<table cellpadding="5" border="3">
+<tr><th>GT</th><th>GQ</th><th>AD</th><th>DP</th><th>Status</th><th>Chrom</th><th>Start</th><th>End</th><th>Allele</th><th>Gene</th><th>Feature</th><th>Feature<br>type</th><th>Consequence</th><th>cDNA<br>position</th><th>CDS<br>position</th><th>Protein<br>position</th><th>Amino<br>acids</th><th>Codons</th><th>Existing<br>variation</th><th>Extra</th></tr>
+<tr><td bgcolor="#f0f0f0">1/1</td><td bgcolor="#f0f0f0">93</td><td bgcolor="#f0f0f0">0,31</td><td bgcolor="#f0f0f0">31</td><td bgcolor="#f0f0f0">OK</td><td bgcolor="#f0f0f0">X</td><td bgcolor="#f0f0f0">138633280</td><td bgcolor="#f0f0f0">138633280</td><td bgcolor="#f0f0f0">G</td><td bgcolor="#f0f0f0">ENSG00000101981</td><td bgcolor="#f0f0f0">ENST00000218099</td><td bgcolor="#f0f0f0">Transcript</td><td bgcolor="#f0f0f0">missense_variant</td><td bgcolor="#f0f0f0">587</td><td bgcolor="#f0f0f0">580</td><td bgcolor="#f0f0f0">194</td><td bgcolor="#f0f0f0">T/A</td><td bgcolor="#f0f0f0">Act/Gct</td><td bgcolor="#f0f0f0">rs6048</td><td bgcolor="#f0f0f0">IMPACT=MODERATE<br>STRAND=1<br>SYMBOL=F9<br>SYMBOL_SOURCE=HGNC<br>HGNC_ID=3551<br>CANONICAL=YES<br>CCDS=CCDS14666.1<br>SIFT=tolerated(0.48)<br>PolyPhen=benign(0.003)<br>EXON=6/8<br>DOMAINS=hmmpanther:PTHR24265,hmmpanther:PTHR24265:SF23,PIRSF_domain:PIRSF001143<br>HGVSc=ENST00000218099.2:c.580A>G<br>HGVSp=ENSP00000218099.2:p.Thr194Ala<br>AF=0.1457<br>CLIN_SIG=protective,benign<br>PHENO=1<br>1000G_AF=0.16000</td></tr>
+<tr><td >0/1</td><td >99</td><td >12,15</td><td >27</td><td >OK</td><td >X</td><td >154158423</td><td >154158424</td><td >T</td><td >ENSG00000185010</td><td >ENST00000360256</td><td >Transcript</td><td >frameshift_variant</td><td >3842-3843</td><td >3641-3642</td><td >1214</td><td >Q/QX</td><td >cag/caAg</td><td >-</td><td >IMPACT=HIGH<br>STRAND=-1<br>SYMBOL=F8<br>SYMBOL_SOURCE=HGNC<br>HGNC_ID=3546<br>CANONICAL=YES<br>CCDS=CCDS35457.1<br>EXON=14/26<br>DOMAINS=Low_complexity_(Seg):seg,Coiled-coils_(Ncoils):Coil,hmmpanther:PTHR10127:SF50,hmmpanther:PTHR10127,PIRSF_domain:PIRSF000354<br>HGVSc=ENST00000360256.4:c.3641dup<br>HGVSp=ENSP00000353393.4:p.Glu1215GlyfsTer26</td></tr>
+<tr><td >1/1</td><td >99</td><td >0,90</td><td >90</td><td >OK</td><td >X</td><td >154194909</td><td >154194909</td><td >A</td><td >ENSG00000185010</td><td >ENST00000360256</td><td >Transcript</td><td >stop_gained</td><td >1264</td><td >1063</td><td >355</td><td >R/*</td><td >Cga/Tga</td><td >rs137852368<br>CM880025</td><td >IMPACT=HIGH<br>STRAND=-1<br>SYMBOL=F8<br>SYMBOL_SOURCE=HGNC<br>HGNC_ID=3546<br>CANONICAL=YES<br>CCDS=CCDS35457.1<br>EXON=8/26<br>DOMAINS=PIRSF_domain:PIRSF000354<br>HGVSc=ENST00000360256.4:c.1063C>T<br>HGVSp=ENSP00000353393.4:p.Arg355Ter<br>CLIN_SIG=pathogenic<br>PHENO=1,1</td></tr>
+</table>
+<p>GT - Genotype call encoded as allele values separated by "/". The allele values are 0 for the reference allele, 1 for the first alternative allele, 2 for the second allele.<br>
+GQ - Conditional genotype quality, encoded as a phred quality -10*log_10(p) (genotype call is wrong, conditioned on the site's being variant); we only report GQ >= 30 on the summary page.<br>
+AD - Read depth for each variant at this position (first reference, followed by alternative alleles).<br>
+DP - Read depth at this position for this sample; we only report DP >= 8 on the summary page.</p>
+<p></p>
+<p><h2>Coverage by target region</h2></p>
+<table cellpadding="5" border="3">
+<tr><th>Region</th><th>Length</th><th>Sites</th><th>Called</th><th>Fraction</th><th>Ave.Cov</th></tr>
+<tr><td>F8/upstream</td><td>279</td><td>279</td><td>279</td><td>100.00%</td><td>40.83</td></tr>
+<tr><td>F8/5-UTR</td><td>171</td><td>171</td><td>171</td><td>100.00%</td><td>28.18</td></tr>
+<tr><td>F8/1</td><td>153</td><td>153</td><td>153</td><td>100.00%</td><td>31.46</td></tr>
+<tr><td>F8/2</td><td>163</td><td>163</td><td>163</td><td>100.00%</td><td>71.99</td></tr>
+<tr><td>F8/3</td><td>143</td><td>143</td><td>143</td><td>100.00%</td><td>75.30</td></tr>
+<tr><td>F8/4</td><td>244</td><td>244</td><td>244</td><td>100.00%</td><td>36.95</td></tr>
+<tr><td>F8/5</td><td>89</td><td>89</td><td>89</td><td>100.00%</td><td>30.75</td></tr>
+<tr><td>F8/6</td><td>143</td><td>143</td><td>143</td><td>100.00%</td><td>105.00</td></tr>
+<tr><td>F8/7</td><td>251</td><td>251</td><td>251</td><td>100.00%</td><td>31.42</td></tr>
+<tr><td>F8/8</td><td>282</td><td>282</td><td>282</td><td>100.00%</td><td>67.92</td></tr>
+<tr><td>F8/9</td><td>204</td><td>204</td><td>204</td><td>100.00%</td><td>68.27</td></tr>
+<tr><td>F8/10</td><td>124</td><td>124</td><td>124</td><td>100.00%</td><td>30.80</td></tr>
+<tr><td>F8/11</td><td>247</td><td>247</td><td>247</td><td>100.00%</td><td>53.68</td></tr>
+<tr><td>F8/12</td><td>171</td><td>171</td><td>171</td><td>100.00%</td><td>59.00</td></tr>
+<tr><td>F8/13</td><td>230</td><td>230</td><td>230</td><td>100.00%</td><td>85.39</td></tr>
+<tr><td>F8/14</td><td>3126</td><td>3119</td><td>3119</td><td>100.00%</td><td>54.83</td></tr>
+<tr><td>F8/15</td><td>181</td><td>181</td><td>181</td><td>100.00%</td><td>47.77</td></tr>
+<tr><td>F8/16</td><td>233</td><td>233</td><td>233</td><td>100.00%</td><td>39.38</td></tr>
+<tr><td>F8/17</td><td>249</td><td>249</td><td>249</td><td>100.00%</td><td>20.72</td></tr>
+<tr><td>F8/18</td><td>203</td><td>203</td><td>203</td><td>100.00%</td><td>23.96</td></tr>
+<tr><td>F8/19</td><td>137</td><td>137</td><td>137</td><td>100.00%</td><td>56.09</td></tr>
+<tr><td>F8/20</td><td>92</td><td>92</td><td>92</td><td>100.00%</td><td>40.76</td></tr>
+<tr><td>F8/21</td><td>106</td><td>106</td><td>106</td><td>100.00%</td><td>27.34</td></tr>
+<tr><td>F8/22</td><td>176</td><td>176</td><td>176</td><td>100.00%</td><td>32.93</td></tr>
+<tr><td>F8/23</td><td>174</td><td>174</td><td>174</td><td>100.00%</td><td>69.17</td></tr>
+<tr><td>F8/24</td><td>169</td><td>169</td><td>169</td><td>100.00%</td><td>29.70</td></tr>
+<tr><td>F8/25</td><td>197</td><td>197</td><td>197</td><td>100.00%</td><td>64.10</td></tr>
+<tr><td>F8/26</td><td>166</td><td>166</td><td>166</td><td>100.00%</td><td>18.69</td></tr>
+<tr><td>F8/3-UTR</td><td>1808</td><td>1720</td><td>1720</td><td>100.00%</td><td>26.05</td></tr>
+<tr><td>F8/downstream</td><td>30</td><td>30</td><td>30</td><td>100.00%</td><td>18.37</td></tr>
+<tr><td>F9/upstream</td><td>271</td><td>271</td><td>271</td><td>100.00%</td><td>63.92</td></tr>
+<tr><td>F9/5-UTR</td><td>29</td><td>29</td><td>29</td><td>100.00%</td><td>73.00</td></tr>
+<tr><td>F9/1</td><td>98</td><td>98</td><td>98</td><td>100.00%</td><td>73.00</td></tr>
+<tr><td>F9/2</td><td>184</td><td>184</td><td>184</td><td>100.00%</td><td>59.78</td></tr>
+<tr><td>F9/3</td><td>45</td><td>45</td><td>45</td><td>100.00%</td><td>69.24</td></tr>
+<tr><td>F9/4</td><td>141</td><td>141</td><td>141</td><td>100.00%</td><td>65.01</td></tr>
+<tr><td>F9/5</td><td>173</td><td>173</td><td>173</td><td>100.00%</td><td>33.49</td></tr>
+<tr><td>F9/6</td><td>236</td><td>236</td><td>236</td><td>100.00%</td><td>50.23</td></tr>
+<tr><td>F9/7</td><td>135</td><td>135</td><td>135</td><td>100.00%</td><td>39.04</td></tr>
+<tr><td>F9/8</td><td>558</td><td>558</td><td>558</td><td>100.00%</td><td>45.61</td></tr>
+<tr><td>F9/3-UTR</td><td>1387</td><td>1186</td><td>1186</td><td>100.00%</td><td>41.07</td></tr>
+<tr><td>F9/downstream</td><td>30</td><td>30</td><td>30</td><td>100.00%</td><td>46.00</td></tr>
+</table>
+<p></p>
+<p><h2>Regions with missing genotype calls</h2></p>
+<p>None</p>
+<p></p>
+<p><h2>Inversion MIP results</h2></p>
+<p>Total inversion MIP reads: <strong>3</strong></p>
+<p>INV1 MIPs:</p>
+<table cellpadding="5" border="3">
+<tr><th>MIP name</th><th>Count</th></tr>
+<tr><td>inv1_1IU+1ID</td><td>2</td><tr>
+<tr><td>inv1_1IU+1ED</td><td>0</td><tr>
+</table>
+<p></p>
+<p>INV22 MIPs:</p>
+<table cellpadding="5" border="3">
+<tr><th>MIP name</th><th>Count</th></tr>
+<tr><td>inv22_ID+IU</td><td>1</td><tr>
+<tr><td>inv22_ED+2U</td><td>0</td><tr>
+<tr><td>inv22_ED+3U</td><td>0</td><tr>
+<tr><td>inv22_ID+2U</td><td>0</td><tr>
+<tr><td>inv22_ID+3U</td><td>0</td><tr>
+<tr><td>inv22_ED+IU</td><td>0</td><tr>
+</table>
+<p><h3>Resulting inversion calls</h3></p>
+<p><em>noINT22</em></p>
+<p><em>noINT1</em></p>
+<p></p>
+<p><h2>Under-/over-performing target-region MIPs</h2></p>
+<p>None</p>
+<p>&nbsp;</p>
+<p>Go to <a href="report.html">Sample Summary Report</a></p>
+<p>Go to <a href="summary.html">Summary Report</a></p>
+</body>
+</html>

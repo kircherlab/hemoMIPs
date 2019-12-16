@@ -1,0 +1,5 @@
+"ID","SampleID","Inversion MIP Reads","Inversion Results","Status"
+"","Sample1","inv1_1IU+1ID:2","noINT1","Low"
+"","Sample1","inv22_ID+IU:1","noINT22","Low"
+"","Sample2","","INT1-FAILED","failed"
+"","Sample2","","INT22-FAILED","failed"
