@@ -47,11 +47,16 @@ An example config can be found in `example_config.yml`. \
 We are aligning against the 1000 Genomes phase 2 build of the human reference `hs37d5.fa.gz`: \
 `wget ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/technical/reference/phase2_reference_assembly_sequence/hs37d5.fa.gz` \
 `wget ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/technical/reference/phase2_reference_assembly_sequence/hs37d5.fa.gz.fai` \
-You also need the bwa and dicctionary index of this file. \
+You also need the bwa and dictionary index of this file. \
 See https://gatkforums.broadinstitute.org/gatk/discussion/2798/howto-prepare-a-reference-for-use-with-bwa-and-gatk\
 
-We also add the CADD annotation from cadd v1.3 to be found here: \
-`https://cadd.gs.washington.edu/download` \
+hemoMIPs uses 1000G annotation of your target region which can be generated with following command using your target_coordinates.bed:
+```bash
+tabix -h -B ftp://ftp-trace.ncbi.nih.gov/1000genomes/ftp/release/20110521/ALL.wgs.phase1_release_v3.20101123.snps_indels_sv.sites.vcf.gz <( awk 'BEGIN{OFS="\t"}{print $1,$2-50,$3+50}' target_coords.bed | sort -k1,1 -k2,2n -k3,3n | bedtools merge ) | bgzip -c > phase1_release_v3.20101123.snps_indels_svs.on_target.vcf.gz
+
+tabix -p vcf phase1_release_v3.20101123.snps_indels_svs.on_target.vcf.gz
+```
+
 VEP uses following reference genome file: \
 `wget ftp://ftp.ensembl.org/pub/release-72/fasta/homo_sapiens/dna/Homo_sapiens.GRCh37.72.dna.toplevel.fa.gz` \
 
