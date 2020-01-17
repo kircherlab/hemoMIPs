@@ -1,18 +1,25 @@
 # hemoMIPs
 
-The hemoMIPs pipeline is a fast and efficient analysis pipeline for MIP targeted NGS-datasets. It runs highly automated using conda und snakemake and can be set to use GATK v4 or GATK v3 for data processing. It reports benign and likely pathogenic variants in a userfriendly HTML report that shows detailed performance statistics and results for a pooled sequencing cohort for each sample and a general summary for the whole cohort.
+The hemoMIPs pipeline is a fast and efficient analysis pipeline for the analysis of multiplexed and targeted NGS datasets created from Molecular Inversion Probes (MIPs). It runs highly automated using conda und snakemake and can be set to use GATK v4 or GATK v3 for variant calling. It reports benign and likely pathogenic variants in a userfriendly HTML report that shows detailed performance statistics and results for a pooled/multiplexed sequencing cohort for each sample (`ind_SAMPLENAME.html`) and general summaries for the whole cohort (sample focus: `report.html`; overall experiment performance: `summary.html`).
 
 ## Pre-requirements
 
 ### Conda
 
-The pipeline depends on snakemake (that wraps up the scripts and runs them highly automated). We use Conda as environment managment software. Conda can install snakemake itself and the neccessary software with all its dependencies automatically. Conda installation guidlines can be found here:
+The pipeline depends on [Snakemake](https://snakemake.readthedocs.io/en/stable/), a workflow management system that wraps up all scripts and runs them highly automated, in various environments. Further, we use Conda as software/dependency managment tool. Conda can install snakemake and all neccessary software with its dependencies automatically. Conda installation guidlines can be found here:
 
-https://conda.io/docs/user-guide/install/index.html
+https://conda.io/projects/conda/en/latest/user-guide/install/index.html
 
 ### Snakemake
 
-Next, you just have to install Snakemake using Conda. This can be done by creating the main environment to run the hemoMIPs environment which contains snakemake using the following command:
+After installing Conda, you install Snakemake using Conda and the `environment.yaml` provided in this repository. For this purpose, please clone or download and uncompress the repository first. Then change into the root folder of the local repository. 
+
+```bash
+git clone https://github.com/kircherlab/hemoMIPs
+cd hemoMIPs
+```
+
+Installing Snakemake and the hemoMIPs dependencies can be done by creating the main Conda environment using the following command:
 
 ```bash
 conda env create -n hemoMIPs --file environment.yaml
@@ -20,35 +27,36 @@ conda env create -n hemoMIPs --file environment.yaml
 
 ### ensembl-vep
 
-We use Ensembl Variant Effect Predictor to predict variant effects. To install vep run:
+We use [Ensembl Variant Effect Predictor (VEP)](https://www.ensembl.org/info/docs/tools/vep/index.html) to predict variant effects. To install VEP run:
 
 ```bash
 conda env create -n vep-env --file envs/vep-env.yml
 
 conda activate vep-env
 ```
-Adjust the Path to your pipeline location of the following command. This command will download the human VEP cache which is 14G.  \
-This can take a while. \
-If you already have the VEP database, simply adjust the path to your database in the config.yml. Note that we run the pipeline using VEP v98.
 
+Adjust the path to your location in the command line below. This command will download the human VEP cache which is 14G.  \
+This may take a while. \
+If you already have the VEP database, simply adjust the path to your database in the config.yml. Note that we run the pipeline using VEP v98. If you wish to use another version or cache, you should up- or downgrade your specific version of VEP and make sure that the other VEP version is correctly referenced in the workflow.
 
 ```bash
-vep_install -a cf -s homo_sapiens -y GRCh37 -c /~PathTo~/hemoMIPs/vep –CONVERT
+mkdir /~PathTo~/hemoMIPs/vep
+vep_install -n -a cf -s homo_sapiens -y GRCh37 -c /~PathTo~/hemoMIPs/vep –CONVERT
 ```
 
+## Other required genome annotations
 
+We are aligning against the 1000 Genomes phase 2 build of the human reference `hs37d5.fa.gz`, which includes decoy sequences for sequences missing from the assembly. We will need the bwa index and GATK dictionary index of this file.
 
-## Config
-
-Almost ready to go:
-You need to download the human reference and other files to run the pipeline and adjust the locations of these files in the `config.yml`.\
-An example config can be found in `example_config.yml`. \
- \
-We are aligning against the 1000 Genomes phase 2 build of the human reference `hs37d5.fa.gz`: \
-`wget ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/technical/reference/phase2_reference_assembly_sequence/hs37d5.fa.gz` \
-`wget ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/technical/reference/phase2_reference_assembly_sequence/hs37d5.fa.gz.fai` \
-You also need the bwa and dictionary index of this file. \
-See https://gatkforums.broadinstitute.org/gatk/discussion/2798/howto-prepare-a-reference-for-use-with-bwa-and-gatk\
+```bash
+mkdir /~PathTo~/hemoMIPs/bwa_index
+cd /~PathTo~/hemoMIPs/bwa_index
+wget ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/technical/reference/phase2_reference_assembly_sequence/hs37d5.fa.gz
+wget ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/technical/reference/phase2_reference_assembly_sequence/hs37d5.fa.gz.fai
+conda activate hemoMIPs
+bwa index 
+...
+```
 
 hemoMIPs uses 1000G annotation of your target region which can be generated with following command using your target_coordinates.bed:
 ```bash
@@ -60,7 +68,12 @@ tabix -p vcf phase1_release_v3.20101123.snps_indels_svs.on_target.vcf.gz
 VEP uses following reference genome file: \
 `wget ftp://ftp.ensembl.org/pub/release-72/fasta/homo_sapiens/dna/Homo_sapiens.GRCh37.72.dna.toplevel.fa.gz` \
 
-Finally: Set the Paths and parameters in your config. You can find a template named "example_config.yml".
+
+## Config
+
+Almost ready to go:
+You need to download the human reference and other files to run the pipeline and adjust the locations of these files in the `config.yml`.\
+An example config can be found in `example_config.yml`. \
 
 ## Input
 You need your NGS fastq files together with information about your MIP design and the targeted region. An example dataset is present with all crucial files and coresponding datastructures in `input/example_dataset`
