@@ -1,0 +1,12 @@
+name: prepTools 
+channels:
+  - bioconda
+  - conda-forge
+  - defaults
+dependencies:
+  - bwa=0.7.15
+  - samtools=1.10
+  - bzip2=1.0.8
+  - picard=2.21
+  - htslib=1.10
+  - bedtools=2.29

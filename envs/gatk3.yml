@@ -1,7 +1,8 @@
-name: vep-env
+name: gatk3
 channels:
   - bioconda
   - conda-forge
   - defaults
 dependencies:
-  - ensembl-vep=98.3
+  - gatk-framework=3.4.46
+

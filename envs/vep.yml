@@ -1,0 +1,9 @@
+name: ensemblVEP
+channels:
+  - bioconda
+  - conda-forge
+  - defaults
+dependencies:
+  - ensembl-vep=98.3
+  - python
+  - htslib
