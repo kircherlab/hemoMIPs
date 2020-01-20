@@ -25,7 +25,6 @@ rule splithemophilia:
     scripts/pipeline2.0/SplitFastQdoubleIndexBAM.py --bases_after_index=ATCTCGTATGCCGTCTTCTGCTTG --bases_after_2ndindex='' -l 10 -m 0 -s 131 --summary -i {input.lst} -q 10 -p --remove | scripts/pipeline2.0/MergeTrimReadsBAM.py --mergeoverlap -p \
     > {output.bam} ) 2> {log}
     """
-
 def getLaneBAMs(wc):
   return(expand("output/{dataset}/mapping/sample_l{lane}.bam", dataset=wc.dataset,lane=config["datasets"][wc.dataset]["lanes"]))
 
@@ -36,12 +35,12 @@ rule mergebam:
   shell: "samtools merge -c {output} {input}"
 
 rule reheadering:
-  input:sam="input/sam_header_hg19_1000g.sam",
+  input:fasta=config["references"]["bwa"],
         lst="input/{dataset}/sample_index.lst"
   output:"input/{dataset}/new_header.sam"
   conda: "envs/prep.yml"
   shell:"""
-        ( cat {input.sam}; tail -n +2 {input.lst}  | awk 'BEGIN{{ FS="\\t"; OFS="\\t" }}{{ print "@RG","ID:"$2,"PL:Illumina","LB:"$2,"SM:"$2}}'     ) > {output}
+        ( echo -e "@HD\tVN:1.4\tSO:queryname"; bwa mem {input.fasta} <( echo -e '@test\nNNNNN\n+\n!!!!!') 2> /dev/null | head -n -2; tail -n +2 {input.lst}  | awk 'BEGIN{{ FS="\\t"; OFS="\\t" }}{{ print "@RG","ID:"$2,"PL:Illumina","LB:"$2,"SM:"$2}}'     ) > {output}
         """
 def loadSamples(wc):
     file = open("input/%s/sample_index.lst" % wc.dataset, "r")
@@ -81,7 +80,6 @@ rule indexing:
   output: "output/{dataset}/mapping/aligned/{plate}.bai"
   conda: "envs/prep.yml"
   shell: "samtools index {input} {output}"
-
 def sampleBamsAligned(wc):
     return (expand("output/{dataset}/mapping/aligned/{plate}.bam", dataset=wc.dataset, plate=loadSamples(wc)))
 def sampleBamsAlignedIdx(wc):
@@ -252,9 +250,12 @@ rule VEP:
         cache=config["tools"]["vep_cache"]
   params:
         vepvers=config["parameters"]["vep-version"]
+        vepspecies=config["parameters"]["vep-species"]
+        vepassembly=config["parameters"]["vep-assembly"]
+        transcripts=config["parameters"]["transcripts"]
   conda: "envs/vep.yml"
   output:"output/{dataset}/mapping/{gatk}/realign_all_samples.vep.tsv.gz"
-  shell: """zcat {input.vcf} | python scripts/processing/VCF2vepVCF.py | vep --no_stats --fasta {input.fasta2} --quiet --buffer 2000 --dir_cache {input.cache} --cache --offline --db_version={params.vepvers} --species homo_sapiens --db_version=98 --format vcf --symbol --hgvs --regulatory --af --sift b --polyphen b --ccds --domains --numbers --canonical --shift_hgvs 1 --output_file >( awk 'BEGIN{{ FS="\\t"; OFS="\\t"; }}{{ if ($1 ~ /^##/) {{ print }} else if ($1 ~ /^#/) {{ sub("^#","",$0); print "#Chrom","Start","End",$0 }} else {{ split($2,a,":"); if (a[2] ~ /-/) {{ split(a[2],b,"-"); print a[1],b[1],b[2],$0 }} else {{ print a[1],a[2],a[2],$0 }} }} }}' | grep -E "(^#|ENST00000360256|ENST00000218099)" | bgzip -c > {output} ) --force_overwrite
+  shell: """zcat {input.vcf} | python scripts/processing/VCF2vepVCF.py | vep --no_stats --fasta {input.fasta2} --quiet --buffer 2000 --dir_cache {input.cache} --cache --offline --db_version={params.vepvers} --species {params.vepspecies} --assembly {params.vepassembly} --format vcf --symbol --hgvs --regulatory --af --sift b --polyphen b --ccds --domains --numbers --canonical --shift_hgvs 1 --output_file >( awk 'BEGIN{{ FS="\\t"; OFS="\\t"; }}{{ if ($1 ~ /^##/) {{ print }} else if ($1 ~ /^#/) {{ sub("^#","",$0); print "#Chrom","Start","End",$0 }} else {{ split($2,a,":"); if (a[2] ~ /-/) {{ split(a[2],b,"-"); print a[1],b[1],b[2],$0 }} else {{ print a[1],a[2],a[2],$0 }} }} }}' | grep -E "(^{params.transcripts})" | bgzip -c > {output} ) --force_overwrite
   """
 
 ##############################################
