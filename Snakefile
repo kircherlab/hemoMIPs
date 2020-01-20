@@ -137,7 +137,9 @@ rule targetIntervals:
  input: "input/{dataset}/target_coords.bed"
  output: "input/{dataset}/targets.intervals"
  conda:"envs/prep.yml"
- shell: "sort -k2,2n {input} | bedtools merge | awk '{ print $1":"$2-50":"$3+50 }' > {output}" 
+ shell: """
+   sort -k2,2n {input} | bedtools merge | awk '{{ print $1":"$2-50":"$3+50 }}' > {output}
+   """ 
 
 # GATK4
 rule gatk4_HTcaller:
@@ -255,9 +257,9 @@ rule VEP:
         fasta2=config["references"]["fasta2"],
         cache=config["tools"]["vep_cache"]
   params:
-        vepvers=config["parameters"]["vep-version"]
-        vepspecies=config["parameters"]["vep-species"]
-        vepassembly=config["parameters"]["vep-assembly"]
+        vepvers=config["parameters"]["vep-version"],
+        vepspecies=config["parameters"]["vep-species"],
+        vepassembly=config["parameters"]["vep-assembly"],
         transcripts=config["parameters"]["transcripts"]
   conda: "envs/vep.yml"
   output:"output/{dataset}/mapping/{gatk}/realign_all_samples.vep.tsv.gz"
