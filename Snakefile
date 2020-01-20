@@ -138,7 +138,7 @@ rule targetIntervals:
  output: "input/{dataset}/targets.intervals"
  conda:"envs/prep.yml"
  shell: """
-   sort -k2,2n {input} | bedtools merge | awk '{{ print $1":"$2-50":"$3+50 }}' > {output}
+   sort -k2,2n {input} | cut -f 1-3 | bedtools merge | awk '{{ print $1":"$2-50"-"$3+50 }}' > {output}
    """ 
 
 # GATK4
