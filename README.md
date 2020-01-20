@@ -56,7 +56,7 @@ wget ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/technical/reference/phase2_referen
 gunzip hs37d5.fa.gz
 bwa index hs37d5.fa
 samtools faidx hs37d5.fa
-picard CreateSequenceDictionary R=hs37d5.fa O=hs37d5.fa.dict
+picard CreateSequenceDictionary R=hs37d5.fa O=hs37d5.dict
 
 ```
 
@@ -211,7 +211,7 @@ In additional to the HTML output files for visualization, results are also prese
 ### GATK v3
 
 GATK v4 is included as a conda environment which automatically installs GATK v4.0.4.0 and all its dependencies.
-If you prefer to run the original pipeline using GATK v3 (i.e. GATK 3.2.2 and GATK 3.4-46) you need to change `config.yml`. Note that GATK 3.2.2 is no longer available for download (from BROAD or as conda package). We therefore provide the JAR file with this repository. 
+If you prefer to run the original pipeline using GATK v3 (i.e. GATK 3.2.2 and GATK 3.4-46) you need to change `config.yml`. Note that GATK 3.2.2 and 3.4-46 are no longer available for download from the BROAD websites. We therefore provide the required JAR files with this repository. 
 
 ### Shed Skin
 
