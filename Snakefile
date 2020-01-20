@@ -133,6 +133,12 @@ rule inversionsum:
 # Realignment and Variant Calling
 ############################################
 
+rule targetIntervals:
+ input: "input/{dataset}/target_coords.bed"
+ output: "input/{dataset}/targets.intervals"
+ conda:"envs/prep.yml"
+ shell: "sort -k2,2n {input} | bedtools merge | awk '{ print $1":"$2-50":"$3+50 }' > {output}" 
+
 # GATK4
 rule gatk4_HTcaller:
   input:
