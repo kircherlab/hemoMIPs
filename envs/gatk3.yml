@@ -5,4 +5,4 @@ channels:
   - defaults
 dependencies:
   - gatk-framework=3.4.46
-
+  - htslib=1.10
