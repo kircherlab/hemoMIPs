@@ -19,73 +19,140 @@ git clone https://github.com/kircherlab/hemoMIPs
 cd hemoMIPs
 ```
 
-Installing Snakemake and the hemoMIPs dependencies can be done by creating the main Conda environment using the following command:
+We will initiate three Conda environments which we will need for some preparations as well as getting the Snakemake workflow invoked. The first environment (`hemoMIPs`) will contain only snakemake, the second (`ensemblVEP`) contains Ensembl VEP and htslib, the third (`prepTools`) some basic tools for preparing annotations (e.g. bedtools, samtools, htslib, bwa, picard):
 
 ```bash
 conda env create -n hemoMIPs --file environment.yaml
+conda env create -n ensemblVEP --file envs/vep.yml
+conda env create -n prepTools --file envs/prep.yml
 ```
 
-### ensembl-vep
+### Annotations of Ensembl VEP
 
-We use [Ensembl Variant Effect Predictor (VEP)](https://www.ensembl.org/info/docs/tools/vep/index.html) to predict variant effects. To install VEP run:
-
-```bash
-conda env create -n vep-env --file envs/vep-env.yml
-
-conda activate vep-env
-```
-
-Adjust the path to your location in the command line below. This command will download the human VEP cache which is 14G.  \
-This may take a while. \
+We use [Ensembl Variant Effect Predictor (VEP)](https://www.ensembl.org/info/docs/tools/vep/index.html) to predict variant effects. VEP was installed in a separate environment (`ensemblVEP`) above. Due to version conflicts with other software, it is not included with  other software. You will need to install the annotation caches for VEP separately. For this purpose, adjust the path to your location in the command line below. This command will download the human VEP cache (approx. 14G), which may take a while. \
 If you already have the VEP database, simply adjust the path to your database in the config.yml. Note that we run the pipeline using VEP v98. If you wish to use another version or cache, you should up- or downgrade your specific version of VEP and make sure that the other VEP version is correctly referenced in the workflow.
 
 ```bash
-mkdir /~PathTo~/hemoMIPs/vep
-vep_install -n -a cf -s homo_sapiens -y GRCh37 -c /~PathTo~/hemoMIPs/vep –CONVERT
+conda activate ensemblVEP
+mkdir /~PathTo~/hemoMIPs/vep_cache
+vep_install -n -a cf -s homo_sapiens -y GRCh37 -c /~PathTo~/hemoMIPs/vep_cache –CONVERT
+conda deactivate
 ```
 
 ## Other required genome annotations
 
-We are aligning against the 1000 Genomes phase 2 build of the human reference `hs37d5.fa.gz`, which includes decoy sequences for sequences missing from the assembly. We will need the bwa index and GATK dictionary index of this file.
+In the following steps, we are preparing the alignment and variant calling index of the reference genome as well as a VCF with known variants. We are using the above created `prepTools` environment:
 
 ```bash
-mkdir /~PathTo~/hemoMIPs/bwa_index
-cd /~PathTo~/hemoMIPs/bwa_index
-wget ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/technical/reference/phase2_reference_assembly_sequence/hs37d5.fa.gz
-wget ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/technical/reference/phase2_reference_assembly_sequence/hs37d5.fa.gz.fai
-conda activate hemoMIPs
-bwa index 
-...
+conda activate prepTools
 ```
 
-hemoMIPs uses 1000G annotation of your target region which can be generated with following command using your target_coordinates.bed:
+For alignment, we use the 1000 Genomes phase 2 build of the human reference `hs37d5.fa.gz`, which includes decoy sequences for sequences missing from the assembly. We will need the bwa index and picard/GATK dictionary index of this file.
+
 ```bash
-tabix -h -B ftp://ftp-trace.ncbi.nih.gov/1000genomes/ftp/release/20110521/ALL.wgs.phase1_release_v3.20101123.snps_indels_sv.sites.vcf.gz <( awk 'BEGIN{OFS="\t"}{print $1,$2-50,$3+50}' target_coords.bed | sort -k1,1 -k2,2n -k3,3n | bedtools merge ) | bgzip -c > phase1_release_v3.20101123.snps_indels_svs.on_target.vcf.gz
+mkdir /~PathTo~/hemoMIPs/reference_index
+cd /~PathTo~/hemoMIPs/reference_index
+wget ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/technical/reference/phase2_reference_assembly_sequence/hs37d5.fa.gz
+wget ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/technical/reference/phase2_reference_assembly_sequence/hs37d5.fa.gz.fai
+bwa index hs37d5.fa.gz
+picard CreateSequenceDictionary -R=hs37d5.fa.gz -O=hs37d5.fa.gz.dict
+
+```
+
+HemoMIPs uses known variants reported by the 1000 Genomes project. To extract known variants for your target region, run the following command using your `target_coords.bed`. Here, we are using the file from the example project:
+
+```bash
+mkdir /~PathTo~/hemoMIPs/known_variants
+cd /~PathTo~/hemoMIPs/known_variants
+tabix -h ftp://ftp-trace.ncbi.nih.gov/1000genomes/ftp/release/20110521/ALL.wgs.phase1_release_v3.20101123.snps_indels_sv.sites.vcf.gz -R <( awk 'BEGIN{OFS="\t"}{print $1,$2-50,$3+50}' /~PathTo~/hemoMIPs/input/example_dataset/target_coords.bed | sort -k1,1 -k2,2n -k3,3n | bedtools merge ) | bgzip -c > phase1_release_v3.20101123.snps_indels_svs.on_target.vcf.gz
 
 tabix -p vcf phase1_release_v3.20101123.snps_indels_svs.on_target.vcf.gz
 ```
 
-VEP uses following reference genome file: \
-`wget ftp://ftp.ensembl.org/pub/release-72/fasta/homo_sapiens/dna/Homo_sapiens.GRCh37.72.dna.toplevel.fa.gz` \
+In addition to these files, you will also need to provide a BWA index for the inversion MIPs as well as the logic of evaluating those in `scripts/processing/summary_report.py` (lines 138-169). In the following, we will assume that you are using the pipeline for the analysis of the hemophilia MIP design and provide the relevant files with your input folder.   
 
+```bash
+conda deactivate
+```
 
 ## Config
 
-Almost ready to go:
-You need to download the human reference and other files to run the pipeline and adjust the locations of these files in the `config.yml`.\
-An example config can be found in `example_config.yml`. \
+Almost ready to go. After you prepared files as above, you need to adjust the locations of these files in the `config.yml`.\
+An example config can be found in `example_config.yml`. If you would like to run the example data set, please copy it to config.xml:
 
-## Input
-You need your NGS fastq files together with information about your MIP design and the targeted region. An example dataset is present with all crucial files and coresponding datastructures in `input/example_dataset`
+```bash
+cd /~PathTo~/hemoMIPs/
+cp example_config.yml config.yml
+```
+
+
+## List of required input files
+
+You need your NGS fastq files together with information about your MIP design and the targeted region. An example dataset is present with all crucial files and coresponding datastructures in `input/example_dataset`. The required files should be created using the Illumina bcl2fastq tool. We expect paired end data with one index read (i.e. `Undetermined_S0_L00{lane}_R1_001.fastq.gz`, `Undetermined_S0_L00{lane}_I1_001.fastq.gz`, `Undetermined_S0_L00{lane}_R2_001.fastq.gz`), as created by `bcl2fastq --create-fastq-for-index-reads --use-bases-mask 'Y*,I*,Y*'`.
 
 Put your NGS fastq files in input/ together with:
-- a MIP design file as generated by `https://github.com/shendurelab/MIPGEN` named `hemomips_design.txt`
-- a samfile header named `new_header.sam`
-- a coresponding barcode sample assignment file named `sample_index.lst`
-- the target coordinates of your MIPs named `target_coords.bed`
-- the target coordinates of the captured sequences named `targets.intervalls`
-- a file containing known benign variants (can be left blank) named `benignVars.txt`
+- MIP design file as generated by `https://github.com/shendurelab/MIPGEN` named `hemomips_design.txt`
+- Named target regions (coordinates) of your MIP experiment named `target_coords.bed`
+- A file containing known benign variants (can be left blank) named `benignVars.txt`. 
+- A barcode sample assignment file named `sample_index.lst`
 
+Examples and further information about these files is provided below.
+
+### MIP probe design information
+
+Information about the designed MIP probes and their location in the reference genome is needed as a tab-separated text file for the tool TrimMIParms.py. The default input file has the following columns: index, score, chr, ext_probe_start, ext_probe_stop, ext_probe_copy, ext_probe_sequence, lig_probe_start, lig_probe_stop, lig_probe_copy, lig_probe_sequence, mip_scan_start_position, mip_scan_stop_position, scan_target_sequence, mip_sequence, feature_start_position, feature_stop_position, probe_strand, failure_flags, gene_name, mip_name. This format is obtained from MIP designs generated by MIPGEN (Boyle et al., 2014), a tool for MIP probe design available on GitHub (https://github.com/shendurelab/MIPGEN). Alternatively, files containing at least the following named columns can be used: chr, ext_probe_start, ext_probe_stop, lig_probe_start, lig_probe_stop, probe_strand, and mip_name. It is critical, that the reported coordinates and chromosome names match the reference genome used in alignment.
+
+### Named target regions in BED format
+
+Please describe the target regions of your MIP experiments in a BED file. These regions and names will be used in the HTML report. An example of this BED file is provided below (see also `input/example_dataset/target_coords.bed`):
+
+```
+X       154250998       154251277       F8/upstream                             
+X       154250827       154250998       F8/5-UTR                                
+X       154250674       154250827       F8/1                            
+X       154227743       154227906       F8/2                            
+...
+X       154088696       154088893       F8/25                           
+X       154065871       154066037       F8/26                           
+X       154064063       154065871       F8/3-UTR                                
+X       154064033       154064063       F8/downstream                           
+X       138612623       138612894       F9/upstream                             
+X       138612894       138612923       F9/5-UTR                                
+X       138612923       138613021       F9/1                            
+X       138619158       138619342       F9/2                            
+...
+X       138642889       138643024       F9/7                            
+X       138643672       138644230       F9/8                            
+X       138644230       138645617       F9/3-UTR                                
+X       138645617       138645647       F9/downstream
+```
+
+### Known benign variants 
+
+A `benignVars.txt` can be used to describe known benign variants. If no such variants are available, an empty file with this name needs to be provided. If variants are provided in this file, these will be printed in gray font in the HTML report and separated in the CSV output files. An example of the format is provided below, the full file for the hemophila project is available as `input/example_dataset/benignVars.txt`
+
+```
+X_138633280_A/G
+X_154065069_T/G
+X_138644836_G/A
+X_138645058_GT/-
+X_138645060_-/GT
+X_138645149_T/C
+```
+
+### Barcode to sample assignment
+
+A two column tab-separated file is required with the sequencing barcode information. The sample name will be used throughout the processing and reporting. The barcode sequence is assumed to be in the first index read of the Illumina sequencing run (I1 FastQ read file). An example for the sample assignment file is provided below:
+
+```
+#Seq	Name
+CATGCGAGA	Plate_001_01A.1
+ACTGGTAGG	Plate_001_01B.2
+GCTCCAACG	Plate_001_01C.3
+GCGTAAGAT	Plate_001_01D.4
+TGACCATCA	Plate_001_01E.5
+GGATTCTCG	Plate_001_01F.6
+```
 
 ## Run pipeline
 
@@ -95,13 +162,47 @@ To start the pipeline:
 ```bash
 conda activate hemoMIPs
 # dry run to see if everything works
-snakemake  --use-conda --configfile example_config.yml -n
+snakemake  --use-conda --configfile config.yml -n
 # run the pipeline
-snakemake  --use-conda --configfile example_config.yml
+snakemake  --use-conda --configfile config.yml
 ```
 
 We added an example_results folder to enable the user to compare the output of the example_dataset analysis to our results.
 
+## Pipeline description
+
+### Primary sequence processing
+
+The primary inputs are raw FastQ files from the sequencing run as well as a sample-to-barcode assignment. In primary processing, reads are converted to BAM format, demultiplexed (storing sample information as read group information), and overlapping paired-end reads are merged and consensus called (Kircher, 2012).
+
+### Alignment and MIP arm trimming
+
+Processed reads are aligned to the reference genome (here GRCh37 build from the 1000 Genomes Project Phase II release) using Burrows-Wheeler Alignment (BWA) 0.7.5 mem (Li and Durbin, 2010). As MIP arm sequence can result in incorrect variant identification (by hiding existing variation below primer sequence), MIP arm sequences are trimmed based on alignment coordinates and new BAM files are created. In this step, we are using MIP design files from MIPgen (Boyle et al., 2014) by default. MIP representation statistics (text output file) are calculated from the aligned files. Further, reads aligning to the Y-chromosome-unique probes (SRY) are counted for each sample and reported (text output file). In a separate alignment step, all reads are aligned to a reference sequence file describing only the structural sequence variants as mutant and reference sequences. Results are summarized over all samples with the number of reads aligning to each sequence contig in a text report.
+
+### Coverage analysis and variant calling
+
+Coverage differences between MIPs are handled by down sampling regions of excessive coverage. Variants are genotyped using GATK (McKenna et al., 2010) UnifiedGenotyper (v3.2-2) in combination with IndelRealigner (v3.4-46). Alternatively, GATK v4.0.4.0 HaplotypeCaller is used in gVCF mode in combination with CombineGVCFs and GenotypeGVCFs. 
+
+The hemophilia datasets perform similar when run either with the GATK3 or GATK4 workflow. However, in low quality genotype calls the performance might vary and a different call set might be obtained. In a reanalysis performed on one of the hemophilia sequencing experiments, the sample specific genotype agreement is above 0.99 (36 different out of 64,308 genotype calls) between the two GATK versions, with high agreement in associated genotype qualities. We therefore choose GATK4 as the standard setting for the workflow as this versions maintains support, is 50x faster and easier to implement in the installation procedure for this pipeline.
+
+Variant annotations of the called variants, including variant effect predictions and HGVS variant descriptions are obtained from Ensembl Variant Effect Predictor (McLaren et al., 2016).
+
+### Report generation
+
+Different HTML reports are generated for visualization, interpretation and better access to all information collected in previous steps. There are two entry points to this information, organized as two different HTML reports – one summarizing all variant calls and MIP performance across samples and the other summarizing per-sample results in an overview table. The first report (`summary.html`) provides a more technical sample and variant summary, per region coverage and MIP performance statistics. The most frequent variants across samples can be used to assess assay performance (e.g. underperforming MIPs could be redesigned in future assays) and allows identification of suspiciously frequent variants (common variants or systematic errors).
+
+The second report (`report.html`) provides an overview of results for each sample, highlighting putative deleterious variants and taking previously defined common/known benign variants out of focus (gray font). Additional information is provided about potential structural variants and incompletely covered regions. This table also provides an overall sample status field with information about passing and failing samples, as well as flags indicating outlier MIP performances.
+
+Both reports provide links to individual report pages of each sample. In the individual reports (`ind_SAMPLENAME.html`), provides quality measures like overall coverage, target region coverage, read counts underlying the inferred sample sex and MIP performance statistics (over- or underperforming MIPs in this sample), but most importantly provides detailed information on the identified variants, structural variant call results and regions without coverage (potential deletions). 
+
+### Report tables in text format
+
+In additional to the HTML output files for visualization, results are also presented in computer readable CSV format (comma separated) files. These CSV files can be joined by either the variant or sample specific identifier columns. The following results are summarized in the respective table files:
+
+- `ind_status.csv` outputs the sample sex inferred from SRY counts, reports outlier MIP performance, number of genotype (GT) calls, covered sites within the MIP design regions, average coverage, heterozygous sites, incompletely covered regions, deletions as well as a textual summary in a sample quality flag (e.g. OK, Failed Inversions, Check MIPs). 
+- `variant_calls.csv` and `variant_calls_benign.csv` contain all or just benign variants, respectively, with location, genotype, quality scores, allelic depth, coverage and status information. 
+- `variant_annotation.csv` provides additional annotations to called variants based on reference and alternative allele information. These annotations include gene name, exonic location, cDNA and CDS position, HGVS Transcript and Protein information, variant rsID, and 1000G allele frequency. 
+- `inversion_calls.csv` contains count results for MIPs targeting predefined structural variants. 
 
 
 ## Optional
@@ -109,17 +210,13 @@ We added an example_results folder to enable the user to compare the output of t
 ### GATK v3
 
 GATK v4 is included as a conda environment which automatically installs GATK v4.0.4.0 and all its dependencies.
-If you prefer to run the pipeline using GATK v3 you need to install both GATK3 versions, if you trust GATK4, this step is not needed:
-
-GATK 3.2.2 (https://software.broadinstitute.org/gatk/download/auth?package=GATK-archive&version=3.2-2-gec30cee)
-GATK 3.4-46 (https://software.broadinstitute.org/gatk/download/auth?package=GATK-archive&version=3.4-46-gbc02625)
-
+If you prefer to run the original pipeline using GATK v3 (i.e. GATK 3.2.2 and GATK 3.4-46) you need to change `config.yml`. Note that GATK 3.2.2 is no longer available for download (from BROAD or as conda package). We therefore provide the JAR file with this repository. 
 
 ### Shed Skin
 
-Shed Skin is an experimental compiler, that can translate pure, but implicitly statically typed Python (2.4-2.6) programs into optimized C++. To fasten the read overlapping process one of our python scripts have to be translated to C++ with Shed Skin.
-This will speed up the analysis but is not crucial for the implementation.
-First we need an environment with python v2.6 and the requirements for Shed Skin. Therefore we created the environment file `envs/shedskin.yml`. Be sure that you are in your root hemoMIPs pipeline folder.
+Shed Skin is an experimental compiler, that can translate pure, but implicitly statically typed Python (2.4-2.6) programs into optimized C++. To fasten the read overlapping process one of our python scripts can be translated to C++ with Shed Skin and cross-compiled. This will speed up the analysis but is not crucial for its implementation.
+
+We are providing an example how we were able to cross-compile using shedskin. Please note that this example assumes that miniconda was installed. If you are using another source for conda, you might need to adjust paths. Further, we need an environment with python v2.6 and the requirements for Shed Skin, which we provide as `envs/shedskin.yml`. Be sure that you are in your root hemoMIPs pipeline folder.
 
 ```bash
 # create a new environment
@@ -157,7 +254,7 @@ sed -i '3s|$| -L ~/miniconda3/envs/shedskin/lib|' Makefile
 make
 ./test
 ```
-The result should look like
+The result should look similar to:
 ```
 *** SHED SKIN Python-to-C++ Compiler 0.9.4 ***
 Copyright 2005-2011 Mark Dufour; License GNU GPL version 3 (See LICENSE)
@@ -173,11 +270,11 @@ If the installation or test fails please have a look a the [Shed Skin Dokumentat
 
 #### Compiling MergeTrimReads.py script
 
-Now we need to compile the `MergeTrimReads.py` script using Shed Skin:
+Now we need to compile the `MergeTrimReads.py` script as an extension module using Shed Skin:
 
 ```bash
 # Go to the script folder
-cd ../../scripts/pipeline2.0
+cd scripts/pipeline2.0
 # create Makefile and edit it
 shedskin -e -L ~/miniconda3/envs/shedskin/include MergeTrimReads
 sed -i '3s|$| -L ~/miniconda3/envs/shedskin/lib|' Makefile
