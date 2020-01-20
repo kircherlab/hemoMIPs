@@ -16,7 +16,7 @@ rule splithemophilia:
     bam="output/{dataset}/mapping/sample_l{lane}.bam"
   log:
     "output/{dataset}/mapping/processing_stats_l{lane}.log"
-  conda: "envs/rules.yml"
+  conda: "envs/python27.yml"
   shell:"""
     ( paste <( zcat {input.R1} | cut -c 1-120 ) \
     <( zcat {input.I} ) \
@@ -32,14 +32,14 @@ def getLaneBAMs(wc):
 rule mergebam:
   input: getLaneBAMs
   output: "output/{dataset}/mapping/sample.bam"
-  conda: "envs/rules.yml"
+  conda: "environment.yml"
   shell: "samtools merge -c {output} {input}"
 
 rule reheadering:
   input:sam="input/sam_header_hg19_1000g.sam",
         lst="input/{dataset}/sample_index.lst"
   output:"input/{dataset}/new_header.sam"
-  conda: "envs/rules.yml"
+  conda: "environment.yml"
   shell:"""
         ( cat {input.sam}; tail -n +2 {input.lst}  | awk 'BEGIN{{ FS="\\t"; OFS="\\t" }}{{ print "@RG","ID:"$2,"PL:Illumina","LB:"$2,"SM:"$2}}'     ) > {output}
         """
@@ -59,7 +59,7 @@ rule bysample:
     "output/{dataset}/mapping/by_sample/{plate}.bam"
   params:
     plate="{plate}"
-  conda: "envs/rules.yml"
+  conda: "envs/python27.yml"
   shell: """
     samtools view -u -F 513 -r {params.plate} {input.bam} | scripts/pipeline2.0/FilterBAM.py -q --qual_number 5 --qual_cutoff=15 -p > {output}
     """
@@ -71,7 +71,7 @@ rule aligning:
     design="input/{dataset}/hemomips_design.txt",
     new_header="input/{dataset}/new_header.sam"
   output: "output/{dataset}/mapping/aligned/{plate}.bam"
-  conda: "envs/rules.yml"
+  conda: "envs/python27.yml"
   shell:"""
     bwa mem -L 80 -M -C {input.fasta} <( samtools view -F 513 {input.bam} | awk 'BEGIN{{ OFS="\\n"; FS="\\t" }}{{ print "@"$1"\\t"$12"\\t"$13"\\t"$14,$10,"+",$11 }}' ) | samtools view -u - | samtools sort - | scripts/pipeline2.0/TrimMIParms.py -d {input.design} -p | samtools reheader {input.new_header} - | samtools sort -o {output} -
     """
@@ -79,7 +79,7 @@ rule aligning:
 rule indexing:
   input: "output/{dataset}/mapping/aligned/{plate}.bam"
   output: "output/{dataset}/mapping/aligned/{plate}.bai"
-  conda: "envs/rules.yml"
+  conda: "environment.yml"
   shell: "samtools index {input} {output}"
 
 def sampleBamsAligned(wc):
@@ -93,8 +93,8 @@ rule samplesexcheck:
     bams=sampleBamsAligned,
     idx=sampleBamsAlignedIdx
   output:"output/{dataset}/samples_sex_check.txt"
-  conda: "envs/rules.yml"
-  shell: "( for i in {input.bams}; do echo $( basename $i ) $(samtools view $i Y | wc -l) $(samtools view -F u $i | wc -l); done )> {output}"
+  conda: "environment.yml"
+  shell: "( for i in {input.bams}; do echo $( basename $i ) $(samtools view $i Y | wc -l) $(samtools view -F 4 $i | wc -l); done )> {output}"
 
 rule inversionmips:
   input:bam="output/{dataset}/mapping/sample.bam",
@@ -103,7 +103,7 @@ rule inversionmips:
   output: "output/{dataset}/mapping/inversion_mips/{plate}.bam"
   params:
     plate="{plate}"
-  conda: "envs/rules.yml"
+  conda: "environment.yml"
   shell: """
     (   grep "@RG" {input.sam}; \
         bwa mem -M -L 80 -C {input.inv} <(
@@ -122,7 +122,7 @@ rule inversionsum:
     lst="input/{dataset}/sample_index.lst",
     bam=sampleBamsInversion
   output:"output/{dataset}/mapping/inversion_mips/inversion_summary_counts.txt"
-  conda: "envs/rules.yml"
+  conda: "environment.yml"
   shell: """
     (for bam in {input.bam}; do
       i=`basename $bam ".bam"`;
@@ -145,7 +145,7 @@ rule gatk4_HTcaller:
   output:
     bamout="output/{dataset}/mapping/gatk4/realign_all_samples.bam",
     vcf="output/{dataset}/mapping/gatk4/bam.vcf.gz"
-  conda:"envs/python3gatk4.yml"
+  conda:"envs/gatk4.yml"
   shell: "gatk HaplotypeCaller -R {input.fasta} -L {input.targets} $(ls -1 {input.bamin} | xargs -n 1 echo -I ) --genotyping-mode DISCOVERY --output-mode EMIT_ALL_SITES -bamout {output.bamout} -O {output.vcf} --disable-optimizations"
 
 rule gatk4_gvcfs:
@@ -159,7 +159,7 @@ rule gatk4_gvcfs:
     vcfgz="output/{dataset}/mapping/gatk4/gvcf/{plate}.g.vcf.gz"
   params:
     plate="{plate}"
-  conda:"envs/python3gatk4.yml"
+  conda:"envs/gatk4.yml"
   shell:"""
     gatk --java-options "-Xmx8G" HaplotypeCaller --min-base-quality-score 5 --base-quality-score-threshold 6 --max-reads-per-alignment-start 0 --kmer-size 10 --kmer-size 11 --kmer-size 12 --kmer-size 13 --kmer-size 14 --kmer-size 15 --kmer-size 25 --kmer-size 35 --max-num-haplotypes-in-population 512 --sample-name {params.plate} -ERC GVCF -R {input.fasta} -I {input.bam} -L {input.targets} -O {output.vcfgz}
     """
@@ -171,7 +171,7 @@ rule gatk4_combine:
   input:fasta=config["references"]["fasta"],
         gvcf=sampleBamsInversion
   output:bamout="output/{dataset}/mapping/gatk4/realign_all_samples.all_sites.vcf.gz"
-  conda:"envs/python3gatk4.yml"
+  conda:"envs/gatk4.yml"
   shell:"gatk CombineGVCFs --break-bands-at-multiples-of 1 -R {input.fasta} $(ls -1 {input.gvcf} | xargs -n 1 echo -V ) -O {output.bamout}"
 
 
@@ -180,7 +180,7 @@ rule gatk4_genotype:
     fasta=config["references"]["fasta"],
     vcf="output/{dataset}/mapping/gatk4/realign_all_samples.all_sites.vcf.gz"
   output:"output/{dataset}/mapping/gatk4/realign_all_samples.vcf.gz"
-  conda:"envs/python3gatk4.yml"
+  conda:"envs/gatk4.yml"
   shell:"gatk GenotypeGVCFs --standard-min-confidence-threshold-for-calling 10 -R {input.fasta} -V {input.vcf} -O {output}"
 
 # GATK3
@@ -191,6 +191,7 @@ rule gatk3_realign:
     fasta=config["references"]["fasta"],
     intervals="input/{dataset}/targets_split.intervals"
   output:"output/{dataset}/mapping/gatk3/realign_all_samples.bam"
+  conda: "envs/gatk3.yml"
   shell: "java -Xmx8G -jar tools/GATK322/GenomeAnalysisTK.jar -T IndelRealigner -R {input.fasta} -DBQ 3 -filterNoBases -maxReads 1500000 -maxInMemory 1500000 -targetIntervals {input.intervals} $(ls -1 {input.bam} | xargs -n 1 echo -I ) -o {output} -dt BY_SAMPLE -dcov 500"
 
 rule gatk3_genotyping:
@@ -198,13 +199,13 @@ rule gatk3_genotyping:
         targets="input/{dataset}/targets.intervals",
         fasta=config["references"]["fasta"]
   output:"output/{dataset}/mapping/gatk3/realign_all_samples.all_sites.vcf.gz"
-  conda: "envs/rules.yml"
+  conda: "envs/gatk3.yml"
   shell: "java -Xmx6G -jar tools/GATK3446/GenomeAnalysisTK.jar -T UnifiedGenotyper -R {input.fasta} -I {input.bam} -L {input.targets} -o >( bgzip -c > {output} ) -glm BOTH -rf BadCigar --max_alternate_alleles 15 --output_mode EMIT_ALL_SITES -dt NONE"
 
 rule gatk3_subsetting:
     input:"output/{dataset}/mapping/gatk3/realign_all_samples.all_sites.vcf.gz"
     output:"output/{dataset}/mapping/gatk3/realign_all_samples.vcf.gz"
-    conda: "envs/rules.yml"
+    conda: "environment.yml"
     shell: """
       zcat {input} | awk 'BEGIN{{ FS="\\t" }}{{ if ($1 ~ /^#/) {{ print }} else {{ if ($5 != ".") print }} }}' | bgzip -c > {output}"""
 
@@ -212,13 +213,13 @@ rule gatk3_subsetting:
 rule gatk3_tabixing:
     input:"output/{dataset}/mapping/gatk3/realign_all_samples.vcf.gz"
     output:"output/{dataset}/mapping/gatk3/realign_all_samples.vcf.idx"
-    conda: "envs/rules.yml"
+    conda: "environment.yml"
     shell: "tabix -p vcf {input} > {output}"
 
 rule gatk3_tabixing2:
     input:"output/{dataset}/mapping/gatk3/realign_all_samples.all_sites.vcf.gz"
     output:"output/{dataset}/mapping/gatk3/realign_all_samples.all_sites.vcf.idx"
-    conda: "envs/rules.yml"
+    conda: "environment.yml"
     shell: "tabix -p vcf {input} > {output}"
 
 
@@ -230,7 +231,7 @@ rule gatk3_tabixing2:
 rule MIPstats:
   input:"output/{dataset}/mapping/{gatk}/realign_all_samples.bam"
   output:"output/{dataset}/mapping/{gatk}/realign_all_samples.MIPstats.tsv"
-  conda: "envs/rules.yml"
+  conda: "envs/python27.yml"
   shell:"scripts/pipeline2.0/MIPstats.py {input} -o {output}"
 
 #rule checkPileUp:
@@ -251,9 +252,9 @@ rule VEP:
         cache=config["tools"]["vep_cache"]
   params:
         vepvers=config["parameters"]["vep-version"]
-  conda: "envs/vep-env.yml"
+  conda: "envs/vep.yml"
   output:"output/{dataset}/mapping/{gatk}/realign_all_samples.vep.tsv.gz"
-  shell: """zcat {input.vcf} | scripts/processing/VCF2vepVCF.py | vep --no_stats --fasta {input.fasta2} --quiet --buffer 2000 --dir_cache {input.cache} --cache --offline --db_version={params.vepvers} --species homo_sapiens --db_version=98 --format vcf --symbol --hgvs --regulatory --af --sift b --polyphen b --ccds --domains --numbers --canonical --shift_hgvs 1 --output_file >( awk 'BEGIN{{ FS="\\t"; OFS="\\t"; }}{{ if ($1 ~ /^##/) {{ print }} else if ($1 ~ /^#/) {{ sub("^#","",$0); print "#Chrom","Start","End",$0 }} else {{ split($2,a,":"); if (a[2] ~ /-/) {{ split(a[2],b,"-"); print a[1],b[1],b[2],$0 }} else {{ print a[1],a[2],a[2],$0 }} }} }}' | grep -E "(^#|ENST00000360256|ENST00000218099)" | bgzip -c > {output} ) --force_overwrite
+  shell: """zcat {input.vcf} | python scripts/processing/VCF2vepVCF.py | vep --no_stats --fasta {input.fasta2} --quiet --buffer 2000 --dir_cache {input.cache} --cache --offline --db_version={params.vepvers} --species homo_sapiens --db_version=98 --format vcf --symbol --hgvs --regulatory --af --sift b --polyphen b --ccds --domains --numbers --canonical --shift_hgvs 1 --output_file >( awk 'BEGIN{{ FS="\\t"; OFS="\\t"; }}{{ if ($1 ~ /^##/) {{ print }} else if ($1 ~ /^#/) {{ sub("^#","",$0); print "#Chrom","Start","End",$0 }} else {{ split($2,a,":"); if (a[2] ~ /-/) {{ split(a[2],b,"-"); print a[1],b[1],b[2],$0 }} else {{ print a[1],a[2],a[2],$0 }} }} }}' | grep -E "(^#|ENST00000360256|ENST00000218099)" | bgzip -c > {output} ) --force_overwrite
   """
 
 ##############################################
@@ -273,7 +274,7 @@ rule summaryreport_gatk4:
         benign="input/{dataset}/benignVars.txt"
   output:
         folder=directory("output/{dataset}/report/gatk4")
-  conda: "envs/rules.yml"
+  conda: "envs/python27.yml"
   shell: """scripts/processing/summary_report.py --benign {input.benign} --vcf {input.vcf} --vep {input.vep} --inversions {input.inv} --sample_sex {input.sex} --target {input.target} --mipstats {input.mips} --design {input.hemomips} --TG {input.tg} && mv report/ {output.folder}
   """
 
@@ -291,7 +292,7 @@ rule summaryreport_gatk3:
         benign="input/{dataset}/benignVars.txt"
   output:
         folder=directory("output/{dataset}/report/gatk3")
-  conda: "envs/rules.yml"
+  conda: "envs/python27.yml"
   shell: """scripts/processing/summary_report.py --benign {input.benign} --vcf {input.vcf} --vep {input.vep} --inversions {input.inv} --sample_sex {input.sex} --target {input.target} --mipstats {input.mips} --indelCheck {input.indel} --design {input.hemomips} --TG {input.tg} && mv report/ {output.folder}
   """
 
