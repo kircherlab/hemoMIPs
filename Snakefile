@@ -32,14 +32,14 @@ def getLaneBAMs(wc):
 rule mergebam:
   input: getLaneBAMs
   output: "output/{dataset}/mapping/sample.bam"
-  conda: "environment.yml"
+  conda: "envs/prep.yml"
   shell: "samtools merge -c {output} {input}"
 
 rule reheadering:
   input:sam="input/sam_header_hg19_1000g.sam",
         lst="input/{dataset}/sample_index.lst"
   output:"input/{dataset}/new_header.sam"
-  conda: "environment.yml"
+  conda: "envs/prep.yml"
   shell:"""
         ( cat {input.sam}; tail -n +2 {input.lst}  | awk 'BEGIN{{ FS="\\t"; OFS="\\t" }}{{ print "@RG","ID:"$2,"PL:Illumina","LB:"$2,"SM:"$2}}'     ) > {output}
         """
@@ -79,7 +79,7 @@ rule aligning:
 rule indexing:
   input: "output/{dataset}/mapping/aligned/{plate}.bam"
   output: "output/{dataset}/mapping/aligned/{plate}.bai"
-  conda: "environment.yml"
+  conda: "envs/prep.yml"
   shell: "samtools index {input} {output}"
 
 def sampleBamsAligned(wc):
@@ -93,7 +93,7 @@ rule samplesexcheck:
     bams=sampleBamsAligned,
     idx=sampleBamsAlignedIdx
   output:"output/{dataset}/samples_sex_check.txt"
-  conda: "environment.yml"
+  conda: "envs/prep.yml"
   shell: "( for i in {input.bams}; do echo $( basename $i ) $(samtools view $i Y | wc -l) $(samtools view -F 4 $i | wc -l); done )> {output}"
 
 rule inversionmips:
@@ -103,7 +103,7 @@ rule inversionmips:
   output: "output/{dataset}/mapping/inversion_mips/{plate}.bam"
   params:
     plate="{plate}"
-  conda: "environment.yml"
+  conda: "envs/prep.yml"
   shell: """
     (   grep "@RG" {input.sam}; \
         bwa mem -M -L 80 -C {input.inv} <(
@@ -122,7 +122,7 @@ rule inversionsum:
     lst="input/{dataset}/sample_index.lst",
     bam=sampleBamsInversion
   output:"output/{dataset}/mapping/inversion_mips/inversion_summary_counts.txt"
-  conda: "environment.yml"
+  conda: "envs/prep.yml"
   shell: """
     (for bam in {input.bam}; do
       i=`basename $bam ".bam"`;
@@ -205,7 +205,7 @@ rule gatk3_genotyping:
 rule gatk3_subsetting:
     input:"output/{dataset}/mapping/gatk3/realign_all_samples.all_sites.vcf.gz"
     output:"output/{dataset}/mapping/gatk3/realign_all_samples.vcf.gz"
-    conda: "environment.yml"
+    conda: "envs/prep.yml"
     shell: """
       zcat {input} | awk 'BEGIN{{ FS="\\t" }}{{ if ($1 ~ /^#/) {{ print }} else {{ if ($5 != ".") print }} }}' | bgzip -c > {output}"""
 
@@ -213,13 +213,13 @@ rule gatk3_subsetting:
 rule gatk3_tabixing:
     input:"output/{dataset}/mapping/gatk3/realign_all_samples.vcf.gz"
     output:"output/{dataset}/mapping/gatk3/realign_all_samples.vcf.idx"
-    conda: "environment.yml"
+    conda: "envs/prep.yml"
     shell: "tabix -p vcf {input} > {output}"
 
 rule gatk3_tabixing2:
     input:"output/{dataset}/mapping/gatk3/realign_all_samples.all_sites.vcf.gz"
     output:"output/{dataset}/mapping/gatk3/realign_all_samples.all_sites.vcf.idx"
-    conda: "environment.yml"
+    conda: "envs/prep.yml"
     shell: "tabix -p vcf {input} > {output}"
 
 
