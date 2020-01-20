@@ -1,6 +1,6 @@
 # hemoMIPs
 
-The hemoMIPs pipeline is a fast and efficient analysis pipeline for the analysis of multiplexed and targeted NGS datasets created from Molecular Inversion Probes (MIPs). It runs highly automated using conda und snakemake and can be set to use GATK v4 or GATK v3 for variant calling. It reports benign and likely pathogenic variants in a userfriendly HTML report that shows detailed performance statistics and results for a pooled/multiplexed sequencing cohort for each sample (`ind_SAMPLENAME.html`) and general summaries for the whole cohort (sample focus: `report.html`; overall experiment performance: `summary.html`).
+The hemoMIPs pipeline is a fast and efficient analysis pipeline for the analysis of multiplexed and targeted NGS datasets created from Molecular Inversion Probes (MIPs). It runs highly automated using conda und snakemake and can be set to use GATK v4 or GATK v3 for variant calling. It reports benign and likely pathogenic variants in a userfriendly HTML report that shows detailed performance statistics and results.
 
 ## Pre-requirements
 
@@ -53,9 +53,10 @@ For alignment, we use the 1000 Genomes phase 2 build of the human reference `hs3
 mkdir /~PathTo~/hemoMIPs/reference_index
 cd /~PathTo~/hemoMIPs/reference_index
 wget ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/technical/reference/phase2_reference_assembly_sequence/hs37d5.fa.gz
-wget ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/technical/reference/phase2_reference_assembly_sequence/hs37d5.fa.gz.fai
-bwa index hs37d5.fa.gz
-picard CreateSequenceDictionary -R=hs37d5.fa.gz -O=hs37d5.fa.gz.dict
+gunzip hs37d5.fa.gz
+bwa index hs37d5.fa
+samtools faidx hs37d5.fa
+picard CreateSequenceDictionary R=hs37d5.fa O=hs37d5.fa.dict
 
 ```
 
