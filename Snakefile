@@ -191,14 +191,21 @@ rule gatk4_genotype:
 
 # GATK3
 
+rule gatk3_splitIntervals:
+  input:"input/{dataset}/targets.intervals"
+  output:"input/{dataset}/targets_split.intervals" 
+  conda:"envs/python27.yml"
+  shell:"cat {input} | python scripts/processing/splitIntervals.py > {output}"
+
 rule gatk3_realign:
   input:
     bam=sampleBamsAligned,
+    bamIdx=sampleBamsAlignedIdx,
     fasta=config["references"]["fasta"],
     intervals="input/{dataset}/targets_split.intervals"
   output:"output/{dataset}/mapping/gatk3/realign_all_samples.bam"
   conda: "envs/gatk3.yml"
-  shell: "java -Xmx8G -jar tools/GATK322/GenomeAnalysisTK.jar -T IndelRealigner -R {input.fasta} -DBQ 3 -filterNoBases -maxReads 1500000 -maxInMemory 1500000 -targetIntervals {input.intervals} $(ls -1 {input.bam} | xargs -n 1 echo -I ) -o {output} -dt BY_SAMPLE -dcov 500"
+  shell: "java -Xmx8G -jar scripts/GenomeAnalysisTK-3.2-2.jar -T IndelRealigner -R {input.fasta} -DBQ 3 -filterNoBases -maxReads 1500000 -maxInMemory 1500000 -targetIntervals {input.intervals} $(ls -1 {input.bam} | xargs -n 1 echo -I ) -o {output} -dt BY_SAMPLE -dcov 500"
 
 rule gatk3_genotyping:
   input:bam="output/{dataset}/mapping/gatk3/realign_all_samples.bam",
@@ -206,7 +213,7 @@ rule gatk3_genotyping:
         fasta=config["references"]["fasta"]
   output:"output/{dataset}/mapping/gatk3/realign_all_samples.all_sites.vcf.gz"
   conda: "envs/gatk3.yml"
-  shell: "java -Xmx6G -jar tools/GATK3446/GenomeAnalysisTK.jar -T UnifiedGenotyper -R {input.fasta} -I {input.bam} -L {input.targets} -o >( bgzip -c > {output} ) -glm BOTH -rf BadCigar --max_alternate_alleles 15 --output_mode EMIT_ALL_SITES -dt NONE"
+  shell: "java -Xmx6G -jar scripts/GenomeAnalysisTK-3.4-46.jar -T UnifiedGenotyper -R {input.fasta} -I {input.bam} -L {input.targets} -o >( bgzip -c > {output} ) -glm BOTH -rf BadCigar --max_alternate_alleles 15 --output_mode EMIT_ALL_SITES -dt NONE"
 
 rule gatk3_subsetting:
     input:"output/{dataset}/mapping/gatk3/realign_all_samples.all_sites.vcf.gz"
@@ -240,12 +247,12 @@ rule MIPstats:
   conda: "envs/python27.yml"
   shell:"scripts/pipeline2.0/MIPstats.py {input} -o {output}"
 
-#rule checkPileUp:
-#  input: bam="output/{dataset}/mapping/{gatk}/realign_all_samples.bam",
-#         sites="output/{dataset}/mapping/{gatk}/realign_all_samples.vcf.gz"
-#  output:"output/{dataset}/mapping/{gatk}/realign_all_samples.indel_check.txt"
-#  conda: "envs/rules.yml"
-#  shell: "scripts/processing/checkPileUpAtInDels.py -b {input.bam} -s {input.sites} -o {output}"
+rule checkPileUp:
+  input: bam="output/{dataset}/mapping/gatk3/realign_all_samples.bam",
+         sites="output/{dataset}/mapping/gatk3/realign_all_samples.vcf.gz"
+  output:"output/{dataset}/mapping/gatk3/realign_all_samples.indel_check.txt"
+  conda: "envs/python27.yml"
+  shell: "scripts/processing/checkPileUpAtInDels.py -b {input.bam} -s {input.sites} -o {output}"
 
 ##############################################
 # VEP
