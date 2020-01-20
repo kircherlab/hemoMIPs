@@ -6,17 +6,20 @@ datasets:
 
 #see README for the download links of these references
 references:
-   fasta: "/{reference-path-1000G-phase2-human-reference}"
-   bwa: "/{bwa-indexed-reference-path-of-1000G-phase2-human-reference}" # can be the same as "fasta" depending where your BWA index files are
-   inv: "input/example_dataset/hemomips_inv_ref.fa" #{path-to-inversion-fasta-file-for-inversion-detection}
-   annotation: "input/example_dataset/phase1_release_v3.20101123.snps_indels_svs.on_target.vcf.gz"
-   fasta2: "/{path-to-ensembl-homosapiens-toplevel/Homo_sapiens.GRCh37.72.dna.toplevel.fa.gz}"
+   fasta: "reference_index/hs37d5.fa.gz" # path to reference genome (here 1000G phase2 human reference)
+   bwa: "reference_index/hs37d5.fa.gz" # name of bwa index for this reference sequence, can be the same as "fasta" depending where your BWA index files are or whether you defined another name
+   inv: "input/example_dataset/hemomips_inv_ref.fa" #path to inversion fasta file including bwa index
+   annotation: "known_variants/phase1_release_v3.20101123.snps_indels_svs.on_target.vcf.gz"
+   fasta2: "vep_cache/homo_sapiens/98_GRCh37/Homo_sapiens.GRCh37.75.dna.primary_assembly.fa.gz" # path to reference fasta within VEP cache (see also output from installing the cache)
 
 tools:
-   vep_cache: "/{vep-cache_homosapiens_98}"
+   vep_cache: "vep_cache/" # Cache folder for Ensembl VEP
 
 parameters:
    vep-version: 98 #vep version, recommended v98
+   vep-species: "homo_sapiens" #vep cache species
+   vep-assembly: "GRCh37" # vep cache genome assembly
+   transcripts: "#|ENST00000360256|ENST00000218099" # list of considered transcripts separated by pipes, do not remove the leading hash and pipe.
 
 GATK:
   - gatk4

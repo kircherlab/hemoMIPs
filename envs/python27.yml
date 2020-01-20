@@ -1,5 +1,5 @@
 
-name: shedskin
+name: python2.7
 channels:
   - bioconda
   - conda-forge
