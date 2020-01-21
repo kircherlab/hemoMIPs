@@ -2,29 +2,27 @@
   {
     "time" : "08:00:00",
     "threads" : 1,
-    "mem" : "16G",
-    "queue" : "medium",
-    "logs" : "/~path-to~/sge_logs",
-    "err" : "/~path-to~/sge_logs"
+    "mem" : "8G"
   },
+ 
   "gatk3_realign":
   {
     "time" : "24:00:00",
-    "mem" : "20G"
+    "mem" : "10G"
   },
+ 
    "gatk3_genotyping":
   {
-    "time" : "24:00:00",
-    "mem" : "20G"
+    "time" : "24:00:00"
   },
  
   "gatk4_HTcaller":
   {
-    "mem" : "20G"
+    "mem" : "10G"
   },
+ 
   "splithemophilia" : 
   {
-    "time" : "48:00:00",
-    "mem" : "20G"   
+    "time" : "48:00:00"
   }
 }
