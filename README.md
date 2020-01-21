@@ -63,6 +63,7 @@ picard CreateSequenceDictionary R=hs37d5.fa O=hs37d5.dict
 HemoMIPs uses known variants reported by the 1000 Genomes project. To extract known variants for your target region, run the following command using your `target_coords.bed`. Here, we are using the file from the example project:
 
 ```bash
+cd /~PathTo~/hemoMIPs/
 mkdir known_variants
 cd known_variants
 tabix -h ftp://ftp-trace.ncbi.nih.gov/1000genomes/ftp/release/20110521/ALL.wgs.phase1_release_v3.20101123.snps_indels_sv.sites.vcf.gz -R <( awk 'BEGIN{OFS="\t"}{print $1,$2-50,$3+50}' /~PathTo~/hemoMIPs/input/example_dataset/target_coords.bed | sort -k1,1 -k2,2n -k3,3n | bedtools merge ) | bgzip -c > phase1_release_v3.20101123.snps_indels_svs.on_target.vcf.gz
