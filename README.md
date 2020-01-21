@@ -80,7 +80,7 @@ conda deactivate
 ## Config
 
 Almost ready to go. After you prepared files as above, you need to adjust the locations of these files in the `config.yml`.\
-An example config can be found in `example_config.yml`. If you would like to run the example data set, please copy it to config.xml:
+An example config can be found in `example_config.yml`. If you would like to run the example data set, please copy it to config.yml:
 
 ```bash
 cd /~PathTo~/hemoMIPs/
