@@ -182,19 +182,19 @@ Processed reads are aligned to the reference genome (here GRCh37 build from the 
 
 ### Coverage analysis and variant calling
 
-Coverage differences between MIPs are handled by down sampling regions of excessive coverage. Variants are genotyped using GATK (McKenna et al., 2010) UnifiedGenotyper (v3.2-2) in combination with IndelRealigner (v3.4-46). Alternatively, GATK v4.0.4.0 HaplotypeCaller is used in gVCF mode in combination with CombineGVCFs and GenotypeGVCFs. 
+Coverage differences between MIPs are handled by down sampling regions of excessive coverage. Variants are genotyped using GATK (McKenna et al., 2010) UnifiedGenotyper (v3.4-46) in combination with IndelRealigner (v3.2-2). Alternatively, GATK v4.0.4.0 HaplotypeCaller is used in gVCF mode in combination with CombineGVCFs and GenotypeGVCFs. 
 
-The hemophilia datasets perform similar when run either with the GATK3 or GATK4 workflow. However, in low quality genotype calls the performance might vary and a different call set might be obtained. In a reanalysis performed on one of the hemophilia sequencing experiments, the sample specific genotype agreement is above 0.99 (36 different out of 64,308 genotype calls) between the two GATK versions, with high agreement in associated genotype qualities. We therefore choose GATK4 as the standard setting for the workflow as this versions maintains support, is 50x faster and easier to implement in the installation procedure for this pipeline.
+The hemophilia datasets perform similar when run either with the GATK3 or GATK4 workflow. However, in low quality genotype calls the performance might vary and a different call set might be obtained. In a reanalysis performed on one of the hemophilia sequencing experiments, the sample specific genotype agreement is above 0.99 (36 different out of 64,308 genotype calls) between the two GATK versions, with high agreement in associated genotype qualities. We therefore choose GATK4 as the standard setting for the workflow as this versions maintains support, is 50x faster and easier to upgrade.
 
 Variant annotations of the called variants, including variant effect predictions and HGVS variant descriptions are obtained from Ensembl Variant Effect Predictor (McLaren et al., 2016).
 
 ### Report generation
 
-Different HTML reports are generated for visualization, interpretation and better access to all information collected in previous steps. There are two entry points to this information, organized as two different HTML reports – one summarizing all variant calls and MIP performance across samples and the other summarizing per-sample results in an overview table. The first report (`summary.html`) provides a more technical sample and variant summary, per region coverage and MIP performance statistics. The most frequent variants across samples can be used to assess assay performance (e.g. underperforming MIPs could be redesigned in future assays) and allows identification of suspiciously frequent variants (common variants or systematic errors).
+Different HTML reports are generated for visualization, interpretation and better access to all information collected in previous steps. There are two entry points to this information, organized as two different HTML reports – one summarizing all variant calls and MIP performance across samples and the other summarizing per-sample results in an overview table. The first report (`summary.html`) provides a more technical sample and variant summary, per region coverage and MIP performance statistics. This report across all samples can be used to assess assay performance (e.g. underperforming MIPs could be redesigned in future assays) and allows identification of suspiciously frequent variants (common variants or systematic errors).
 
 The second report (`report.html`) provides an overview of results for each sample, highlighting putative deleterious variants and taking previously defined common/known benign variants out of focus (gray font). Additional information is provided about potential structural variants and incompletely covered regions. This table also provides an overall sample status field with information about passing and failing samples, as well as flags indicating outlier MIP performances.
 
-Both reports provide links to individual report pages of each sample. In the individual reports (`ind_SAMPLENAME.html`), provides quality measures like overall coverage, target region coverage, read counts underlying the inferred sample sex and MIP performance statistics (over- or underperforming MIPs in this sample), but most importantly provides detailed information on the identified variants, structural variant call results and regions without coverage (potential deletions). 
+Both reports provide links to individual report pages of each sample. The individual reports (`ind_SAMPLENAME.html`), provide quality measures like overall coverage, target region coverage, read counts underlying the inferred sample sex and MIP performance statistics (over- or underperforming MIPs in this sample), but most importantly provide detailed information on the identified variants, structural variant call results and regions without coverage (potential deletions). 
 
 ### Report tables in text format
 
@@ -211,13 +211,13 @@ In additional to the HTML output files for visualization, results are also prese
 ### GATK v3
 
 GATK v4 is included as a conda environment which automatically installs GATK v4.0.4.0 and all its dependencies.
-If you prefer to run the original pipeline using GATK v3 (i.e. GATK 3.2.2 and GATK 3.4-46) you need to change `config.yml`. Note that GATK 3.2.2 and 3.4-46 are no longer available for download from the BROAD websites. We therefore provide the required JAR files with this repository. 
+If you prefer to run the original pipeline using GATK v3 (i.e. GATK 3.2.2 and GATK 3.4-46) you need to change `config.yml` to additionaly include "gatk3" or replace the gatk4 entry. Note that GATK 3.2.2 and 3.4-46 are no longer available for download from the BROAD websites. We therefore provide the required JAR files with this repository rather than obtaining them through Conda. 
 
 ### Shed Skin
 
-Shed Skin is an experimental compiler, that can translate pure, but implicitly statically typed Python (2.4-2.6) programs into optimized C++. To fasten the read overlapping process one of our python scripts can be translated to C++ with Shed Skin and cross-compiled. This will speed up the analysis but is not crucial for its implementation.
+Shed Skin is an experimental compiler, that can translate pure, but implicitly statically typed Python (2.4-2.6) programs into optimized C++. To fasten (~5x) the read overlapping process one of our python scripts can be translated to C++ with Shed Skin and cross-compiled. This will speed up the analysis but is not crucial for its implementation.
 
-We are providing an example how we were able to cross-compile using shedskin. Please note that this example assumes that miniconda was installed. If you are using another source for conda, you might need to adjust paths. Further, we need an environment with python v2.6 and the requirements for Shed Skin, which we provide as `envs/shedskin.yml`. Be sure that you are in your root hemoMIPs pipeline folder.
+We are providing an example how we were able to cross-compile using shedskin. Please note that this example assumes that miniconda was installed. If you are using another source for Conda, you might need to adjust paths. Further, we need an environment with python v2.6 and the requirements for Shed Skin, which we provide as `envs/shedskin.yml`. Be sure that you are in your root hemoMIPs pipeline folder when executing the following commands.
 
 ```bash
 # create a new environment
