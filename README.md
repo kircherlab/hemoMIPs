@@ -34,8 +34,8 @@ If you already have the VEP database, simply adjust the path to your database in
 
 ```bash
 conda activate ensemblVEP
-mkdir /~PathTo~/hemoMIPs/vep_cache
-vep_install -n -a cf -s homo_sapiens -y GRCh37 -c /~PathTo~/hemoMIPs/vep_cache –CONVERT
+mkdir vep_cache
+vep_install -n -a cf -s homo_sapiens -y GRCh37 -c vep_cache/ –CONVERT
 conda deactivate
 ```
 
@@ -50,8 +50,8 @@ conda activate prepTools
 For alignment, we use the 1000 Genomes phase 2 build of the human reference `hs37d5.fa.gz`, which includes decoy sequences for sequences missing from the assembly. We will need the bwa index and picard/GATK dictionary index of this file.
 
 ```bash
-mkdir /~PathTo~/hemoMIPs/reference_index
-cd /~PathTo~/hemoMIPs/reference_index
+mkdir reference_index
+cd reference_index
 wget ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/technical/reference/phase2_reference_assembly_sequence/hs37d5.fa.gz
 gunzip hs37d5.fa.gz
 bwa index hs37d5.fa
@@ -63,8 +63,8 @@ picard CreateSequenceDictionary R=hs37d5.fa O=hs37d5.dict
 HemoMIPs uses known variants reported by the 1000 Genomes project. To extract known variants for your target region, run the following command using your `target_coords.bed`. Here, we are using the file from the example project:
 
 ```bash
-mkdir /~PathTo~/hemoMIPs/known_variants
-cd /~PathTo~/hemoMIPs/known_variants
+mkdir known_variants
+cd known_variants
 tabix -h ftp://ftp-trace.ncbi.nih.gov/1000genomes/ftp/release/20110521/ALL.wgs.phase1_release_v3.20101123.snps_indels_sv.sites.vcf.gz -R <( awk 'BEGIN{OFS="\t"}{print $1,$2-50,$3+50}' /~PathTo~/hemoMIPs/input/example_dataset/target_coords.bed | sort -k1,1 -k2,2n -k3,3n | bedtools merge ) | bgzip -c > phase1_release_v3.20101123.snps_indels_svs.on_target.vcf.gz
 
 tabix -p vcf phase1_release_v3.20101123.snps_indels_svs.on_target.vcf.gz
