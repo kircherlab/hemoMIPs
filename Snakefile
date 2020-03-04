@@ -1,4 +1,5 @@
 # Snakemake hemophilia
+
 localrules: all
 
 
@@ -14,13 +15,15 @@ rule splithemophilia:
     lst="input/{dataset}/sample_index.lst"
   output:
     bam="output/{dataset}/mapping/sample_l{lane}.bam"
+  params:
+    length=config["parameters"]["read-length"]
   log:
     "output/{dataset}/mapping/processing_stats_l{lane}.log"
   conda: "envs/python27.yml"
   shell:"""
-    ( paste <( zcat {input.R1} | cut -c 1-120 ) \
+    ( paste <( zcat {input.R1} | cut -c {params.length}) \
     <( zcat {input.I} ) \
-    <( zcat {input.R2} | cut -c 1-120 ) | \
+    <( zcat {input.R2} | cut -c {params.length} ) | \
     awk '{{ count+=1; if ((count == 1) || (count == 3)) {{ print $1 }} else {{ print $1$2$3 }}; if (count == 4) {{ count=0 }} }}' | \
     scripts/pipeline2.0/SplitFastQdoubleIndexBAM.py --bases_after_index=ATCTCGTATGCCGTCTTCTGCTTG --bases_after_2ndindex='' -l 10 -m 0 -s 131 --summary -i {input.lst} -q 10 -p --remove | scripts/pipeline2.0/MergeTrimReadsBAM.py --mergeoverlap -p \
     > {output.bam} ) 2> {log}
@@ -94,40 +97,54 @@ rule samplesexcheck:
   conda: "envs/prep.yml"
   shell: "( for i in {input.bams}; do echo $( basename $i ) $(samtools view $i Y | wc -l) $(samtools view -F 4 $i | wc -l); done )> {output}"
 
-rule inversionmips:
-  input:bam="output/{dataset}/mapping/sample.bam",
-        sam="input/{dataset}/new_header.sam",
-        inv=config["references"]["inv"]
-  output: "output/{dataset}/mapping/inversion_mips/{plate}.bam"
-  params:
-    plate="{plate}"
-  conda: "envs/prep.yml"
-  shell: """
-    (   grep "@RG" {input.sam}; \
-        bwa mem -M -L 80 -C {input.inv} <(
-            samtools view -r {params.plate} -F 1 {input.bam} | awk 'BEGIN{{ OFS="\\n" }}{{ if (length($10) >= 75) {{ print "@"$1" "$12"\\t"$13"\\t"$14,$10,"+",$11 }} }}' \
-        ) | awk '{{ if (($0 ~ /^@/) || ($3 ~ /^inv/)) print }}'; \
-        bwa mem -M -L 80 -p -C {input.inv} <( \
-            samtools view -r {params.plate} -f 1 {input.bam} | awk 'BEGIN{{ OFS="\\n" }}{{ print "@"$1" "$12"\\t"$13"\\t"$14,$10,"+",$11 }}' \
-        ) | awk '{{ if (($0 !~ /^@/) && ($3 ~ /^inv/)) print }}' \
-     ) | samtools view -b -F 768 - | samtools sort -O bam -o {output} -
-    """
-def sampleBamsInversion(wc):
-    return (expand("output/{dataset}/mapping/inversion_mips/{plate}.bam", dataset=wc.dataset, plate=loadSamples(wc)))
 
-rule inversionsum:
-  input:
-    lst="input/{dataset}/sample_index.lst",
-    bam=sampleBamsInversion
-  output:"output/{dataset}/mapping/inversion_mips/inversion_summary_counts.txt"
-  conda: "envs/prep.yml"
-  shell: """
-    (for bam in {input.bam}; do
-      i=`basename $bam ".bam"`;
-      echo $i $( ( samtools view -F 513 $bam | awk 'BEGIN{{ FS="\\t" }}{{ split($12,a,":"); if (($6 !~ /S/) && (a[1] == "NM") && (a[3] <= 10)) {{ print $3 }} }}'; samtools view -f 2 -F 512 $bam | awk 'BEGIN{{ FS="\\t"; OFS="\\t" }}{{ split($12,a,":"); if (($6 !~ /S/) && (a[1] == "NM") && (a[3] <= 10)) {{ print $1,$3 }} }}' | sort | uniq -c | awk '{{ if ($1 == 2) print $3 }}' ) | sort | uniq -c | awk '{{ print $1":"$2 }}' );
-      done )> {output}
-    """
 
+if config["parameters"]["inv"] == "yes":
+  rule inversionmips:
+    input:bam="output/{dataset}/mapping/sample.bam",
+          sam="input/{dataset}/new_header.sam",
+          inv=config["references"]["inv"]
+    output: "output/{dataset}/mapping/inversion_mips/{plate}.bam"
+    params:
+      plate="{plate}"
+    conda: "envs/prep.yml"
+    shell: """
+      (   grep "@RG" {input.sam}; \
+          bwa mem -M -L 80 -C {input.inv} <(
+              samtools view -r {params.plate} -F 1 {input.bam} | awk 'BEGIN{{ OFS="\\n" }}{{ if (length($10) >= 75) {{ print "@"$1" "$12"\\t"$13"\\t"$14,$10,"+",$11 }} }}' \
+          ) | awk '{{ if (($0 ~ /^@/) || ($3 ~ /^inv/)) print }}'; \
+          bwa mem -M -L 80 -p -C {input.inv} <( \
+              samtools view -r {params.plate} -f 1 {input.bam} | awk 'BEGIN{{ OFS="\\n" }}{{ print "@"$1" "$12"\\t"$13"\\t"$14,$10,"+",$11 }}' \
+          ) | awk '{{ if (($0 !~ /^@/) && ($3 ~ /^inv/)) print }}' \
+      ) | samtools view -b -F 768 - | samtools sort -O bam -o {output} -
+      """   
+
+
+      
+  def sampleBamsInversion(wc):
+      return (expand("output/{dataset}/mapping/inversion_mips/{plate}.bam", dataset=wc.dataset, plate=loadSamples(wc)))
+
+  rule inversionsum:
+    input:
+      lst="input/{dataset}/sample_index.lst",
+      bam=sampleBamsInversion
+    output:"output/{dataset}/mapping/inversion_mips/inversion_summary_counts.txt"
+    conda: "envs/prep.yml"
+    shell: """
+      (for bam in {input.bam}; do
+        i=`basename $bam ".bam"`;
+        echo $i $( ( samtools view -F 513 $bam | awk 'BEGIN{{ FS="\\t" }}{{ split($12,a,":"); if (($6 !~ /S/) && (a[1] == "NM") && (a[3] <= 10)) {{ print $3 }} }}'; samtools view -f 2 -F 512 $bam | awk 'BEGIN{{ FS="\\t"; OFS="\\t" }}{{ split($12,a,":"); if (($6 !~ /S/) && (a[1] == "NM") && (a[3] <= 10)) {{ print $1,$3 }} }}' | sort | uniq -c | awk '{{ if ($1 == 2) print $3 }}' ) | sort | uniq -c | awk '{{ print $1":"$2 }}' );
+        done )> {output}
+      """
+
+else:
+  rule no_inversions:
+    input: lst="input/{dataset}/sample_index.lst",
+    output:"output/{dataset}/mapping/inversion_mips/inversion_summary_counts.txt"
+    shell:"""
+      cut -f2 {input.lst} | tail -n +2 > {output}
+      """
+  
 
 ############################################
 # Realignment and Variant Calling
@@ -162,7 +179,7 @@ rule gatk4_gvcfs:
     bam="output/{dataset}/mapping/aligned/{plate}.bam",
     idx="output/{dataset}/mapping/aligned/{plate}.bai",
   output:
-    vcfgz="output/{dataset}/mapping/gatk4/gvcf/{plate}.g.vcf.gz"
+    vcfgz="output/{dataset}/report/gvcf/{plate}.g.vcf.gz"
   params:
     plate="{plate}"
   conda:"envs/gatk4.yml"
@@ -171,7 +188,7 @@ rule gatk4_gvcfs:
     """
 
 def sampleBamsInversion(wc):
-    return (expand("output/{dataset}/mapping/gatk4/gvcf/{plate}.g.vcf.gz", dataset=wc.dataset, plate=loadSamples(wc)))
+  return (expand("output/{dataset}/report/gvcf/{plate}.g.vcf.gz", dataset=wc.dataset, plate=loadSamples(wc)))
 
 rule gatk4_combine:
   input:fasta=config["references"]["fasta"],
