@@ -71,10 +71,14 @@ tabix -h ftp://ftp-trace.ncbi.nih.gov/1000genomes/ftp/release/20110521/ALL.wgs.p
 tabix -p vcf phase1_release_v3.20101123.snps_indels_svs.on_target.vcf.gz
 ```
 
-If you decided to include MIPs to discover targeted Inversions you will also need to provide a BWA index for the inversion MIPs as well as the logic of evaluating those in `scripts/processing/summary_report.py` (lines 138-169). If you do not have Inversion in your design set the Parameter in the config file (Parameters: Inv) to "no". In the following, we will assume that you are using the pipeline for the analysis of the hemophilia MIP design and provide the relevant files with your input folder.   
+If you decided to include MIPs to discover targeted Inversions you will also need to provide a BWA index for the inversion MIPs as well as the logic of evaluating those in `scripts/processing/summary_report.py` (lines 138-169). If you do not have Inversion in your design set the Parameter in the config file (Parameters: Inv) to "no". In the following, we will assume that you are using the pipeline for the analysis of the hemophilia MIP design and provide the relevant files with your input folder.   \
+The environments needed to prepare the workflow can be removed at this step. Snakemake will install all additional packages during the first  run of the pipeline automatically.
+Do not remove the hemoMIPs environment as this is needed as the snakemake implementation is installed there.
 
 ```bash
 conda deactivate
+conda env remove --name ensemblVEP
+conda env remove --name prepTools
 ```
 
 ## Config
