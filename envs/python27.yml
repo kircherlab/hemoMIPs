@@ -6,11 +6,11 @@ channels:
   - defaults
 dependencies:
   # Script dependencies
-  - bwa=0.7.15
+  - bwa=0.7.17
   - python=2.7
-  - samtools=1.7
-  - bzip2=1.0.6
-  - pysam=0.14
-  - bx-python=0.7.4
-  - numpy=1.12.1
-  - htslib=1.7
+  - samtools=1.10
+  - bzip2=1.0.8
+  - pysam=0.15.3
+  - bx-python=0.8.6
+  - numpy=1.16.5
+  - htslib=1.10.2
