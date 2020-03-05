@@ -8,7 +8,7 @@ datasets:
 references:
    fasta: "reference_index/hs37d5.fa" # path to reference genome (here 1000G phase2 human reference)
    bwa: "reference_index/hs37d5.fa" # name of bwa index for this reference sequence, can be the same as "fasta" depending where your BWA index files are or whether you defined another name
-   inv: "input/example_dataset/hemomips_inv_ref.fa" #path to inversion fasta file including bwa index
+   inv: "input/example_dataset/hemomips_inv_ref.fa" #path to inversion fasta file including bwa index, not needed if parameters:inv: "no"
    annotation: "known_variants/phase1_release_v3.20101123.snps_indels_svs.on_target.vcf.gz"
    fasta2: "vep_cache/homo_sapiens/98_GRCh37/Homo_sapiens.GRCh37.75.dna.primary_assembly.fa.gz" # path to reference fasta within VEP cache (see also output from installing the cache)
 
