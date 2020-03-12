@@ -15,15 +15,13 @@ rule splithemophilia:
     lst="input/{dataset}/sample_index.lst"
   output:
     bam="output/{dataset}/mapping/sample_l{lane}.bam"
-  params:
-    length=config["parameters"]["read-length"]
   log:
     "output/{dataset}/mapping/processing_stats_l{lane}.log"
   conda: "envs/python27.yml"
   shell:"""
-    ( paste <( zcat {input.R1} | cut -c {params.length}) \
+    ( paste <( zcat {input.R1} | cut -c 120 ) \
     <( zcat {input.I} ) \
-    <( zcat {input.R2} | cut -c {params.length} ) | \
+    <( zcat {input.R2} | cut -c 120 ) | \
     awk '{{ count+=1; if ((count == 1) || (count == 3)) {{ print $1 }} else {{ print $1$2$3 }}; if (count == 4) {{ count=0 }} }}' | \
     scripts/pipeline2.0/SplitFastQdoubleIndexBAM.py --bases_after_index=ATCTCGTATGCCGTCTTCTGCTTG --bases_after_2ndindex='' -l 10 -m 0 -s 131 --summary -i {input.lst} -q 10 -p --remove | scripts/pipeline2.0/MergeTrimReadsBAM.py --mergeoverlap -p \
     > {output.bam} ) 2> {log}
