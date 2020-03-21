@@ -49,7 +49,7 @@ def loadSamples(wc):
     for line in file:
       if line.startswith("#"):
           continue
-      output.append(line.split("\t")[1].strip())
+      output.append(line.split("\t")[-1].strip())
     return(output)
 
 rule bysample:
@@ -140,7 +140,7 @@ else:
     input: lst="input/{dataset}/sample_index.lst",
     output:"output/{dataset}/mapping/inversion_mips/inversion_summary_counts.txt"
     shell:"""
-      cut -f2 {input.lst} | tail -n +2 > {output}
+      awk '{{ print $NF }}' {input.lst} | tail -n +2 > {output}
       """
   
 
