@@ -7,7 +7,7 @@ Merge/Adapter trim reads stored in BAM
 
 :Author: Martin Kircher
 :Contact: mkircher@uw.edu
-:Date: *06.05.2013
+:Date: *21.03.2020
 :Type: tool
 :Input: BAM
 :Output: BAM
@@ -51,7 +51,7 @@ def identifyTrim(cigarlist,refbases,reverse=False):
         else:
           trim += length
     # Count reference bases (to identify trim point)
-    if operation == 0 or operation == 2 or operation == 3 or operation >= 6:
+    if operation == 0 or operation == 2 or operation == 3 or operation >= 6: 
       if length > refbases:
         keep = True
         length-=refbases
@@ -73,7 +73,7 @@ def makeNewRead(trim,loff,newCigar,read,trim2=None,MIPid=None):
   a.qname = read.qname
 
   a.pos = read.pos+loff
-  if trim > 0:
+  if (trim > 0) or (trim == None):
     a.seq = read.seq[trim:trim2]
     a.qual = read.qual[trim:trim2]
   else:
@@ -91,7 +91,7 @@ def makeNewRead(trim,loff,newCigar,read,trim2=None,MIPid=None):
   #a.mrnm = read.mrnm
   #a.mpos = read.mpos # WILL BE OFF
   #a.isize = read.isize # WILL BE OFF
-
+  
   tags = []
   for key,value in read.tags:
     if key != "NM" and key != "MD" and key != "ZM":
@@ -107,7 +107,7 @@ def makeNewRead(trim,loff,newCigar,read,trim2=None,MIPid=None):
 parser = OptionParser("%prog [options] BAMfile")
 parser.add_option("-p","--PIPE",dest="pipe",help="Read BAM from and write to PIPE",default=False,action="store_true")
 parser.add_option("-o", "--outfile", dest="outfile", help="Name of output file (def trimMIParms.bam)",default="trimMIParms.bam")
-parser.add_option("-d", "--design", dest="design", help="MIP design file")
+parser.add_option("-d", "--design", dest="design", help="MIP design file (default /net/shendure/vol1/home/mkircher/hemophilia/hemomips_design_file_updated.txt)",default="/net/shendure/vol1/home/mkircher/hemophilia/hemomips_design_file_updated.txt")
 parser.add_option("-v", "--verbose", dest="verbose", help="Turn all messages on",default=False,action="store_true")
 (options, args) = parser.parse_args()
 
@@ -136,7 +136,7 @@ if os.path.exists(options.design):
           elif elem == "mip_name": fmipname = ind
       else:
         chrom,lstart,lend,estart,eend,strand,mipname = fields[fchrom],int(fields[ligStart])-1,int(fields[ligEnd]),int(fields[extStart])-1,int(fields[extEnd]),fields[fstrand],fields[fmipname]
-        if chrom not in ligArms:
+        if chrom not in ligArms: 
           ligArms[chrom] = IntervalTree()
           extArms[chrom] = IntervalTree()
         if strand == "+":
@@ -156,7 +156,7 @@ if options.verbose:
 
 fileflags = 'wb'
 
-if options.pipe:
+if options.pipe: 
   infile = pysam.Samfile( "-", 'rb' )
   outfile = pysam.Samfile( "-", fileflags, template = infile)
 else:
@@ -169,7 +169,7 @@ else:
   else:
     sys.stderr.write("No input file specified.\n")
     sys.exit()
-
+  
 references = dict(map(lambda (x,y):(x,y),enumerate(infile.references)))
 
 ltid,lchrom = None,None
@@ -179,12 +179,12 @@ ltchecked = None,None
 
 for read in infile:
   cigar = read.cigar
-
+  
   if cigar != None:
     alength = aln_length(cigar)
     start = read.pos
     end = read.pos+alength-1
-
+    
     if read.tid == ltid:
       chrom = lchrom
     else:
@@ -194,13 +194,14 @@ for read in infile:
 
     if chrom in ligArms:
       found = False
+      found2 = False
       seq = read.seq
       qual = read.qual
       strand = read.is_reverse
-
+      
       tchecked,mstart,mlength,mstart2,mlength2 = None,None,None,None,None
       mname,mname2 = None,None
-
+      
       if read.is_paired:
         if (read.is_read1 and not strand): # EXPECT LIGATION ARM FOR READ START
           tchecked = "LigArmStart"
@@ -232,45 +233,49 @@ for read in infile:
             break
       else:
         if not strand: # EXPECT LIGATION ARM FOR READ START AND EXTENSION ARM FOR READ END
-          tchecked = "ExtArmEnd"
           #sys.stderr.write('%d %d\n'%(start,end))
           for match in extArms[chrom].find(end-1,end+2):
             #sys.stderr.write('Found ExtArmEnd\n')
             mstart,mlength,mname = match.start,match.value[0],match.value[1]
             mlength -= (mstart-end)
             found = True
+            tchecked = "ExtArmEnd"
             break
-          if found:
-            tchecked += ";LigArmStart"
-            found = False
-            for match in ligArms[chrom].find(start-1,start+2):
-              #sys.stderr.write('Found LigArmStart\n')
-              mstart2,mlength2,mname2 = match.start,match.value[0],match.value[1]
-              mlength2 += (mstart2-start)
-              found = True
-              break
-          else:
-            tchecked = None
-            found = False
+  
+          for match in ligArms[chrom].find(start-1,start+2):
+            #sys.stderr.write('Found LigArmStart\n')
+            mstart2,mlength2,mname2 = match.start,match.value[0],match.value[1]
+            mlength2 += (mstart2-start)
+            found = True
+            if tchecked != None: 
+              tchecked += ";LigArmStart"
+            else:
+              tchecked = "LigArmStart"
+              mstart,mlength,mname = mstart2,mlength2,mname2
+              mstart2,mlength2,mname2 = None,None,None 
+            break
+
         else: # EXPECT LIGATION ARM FOR READ END AND EXTENSION ARM FOR READ START
-          tchecked = "LigArmEnd"
           #sys.stderr.write('%d %d\n'%(start,end))
           for match in ligArms[chrom].find(end-1,end+2):
             mstart,mlength,mname = match.start,match.value[0],match.value[1]
             mlength -= (mstart-end)
             found = True
+            tchecked = "LigArmEnd"
             break
-          if found:
-            tchecked += ";ExtArmStart"
-            found = False
-            for match in extArms[chrom].find(start-1,start+2):
-              mstart2,mlength2,mname2 = match.start,match.value[0],match.value[1]
-              mlength2 += (mstart2-start)
-              found = True
-              break
-          else:
-            found = False
 
+          for match in extArms[chrom].find(start-1,start+2):
+            mstart2,mlength2,mname2 = match.start,match.value[0],match.value[1]
+            mlength2 += (mstart2-start)
+            found = True
+            if tchecked != None:
+              tchecked += ";ExtArmStart"  
+            else:
+              tchecked = "ExtArmStart"
+              mstart,mlength,mname = mstart2,mlength2,mname2
+              mstart2,mlength2,mname2 = None,None,None
+            break
+        
       if found:
         mipID = None
         if mname == mname2 or mname2 == None: mipID = mname
@@ -283,18 +288,21 @@ for read in infile:
         if (tchecked == ltchecked) and (lpos == start) and (lchrom == chrom) and (lstrand == strand) and (lcigar == cigar):
           read = makeNewRead(ltrim,loff,lnewcigar,read,ltrim2,MIPid=mipID)
         else:
-          if tchecked == "LigArmEnd;ExtArmStart" or "ExtArmEnd;LigArmStart":
+          if (tchecked == "LigArmEnd;ExtArmStart") or (tchecked == "ExtArmEnd;LigArmStart"):
             ltrim, lnewcigar = identifyTrim(cigar,mlength,reverse=True)
             ltrim2, lnewcigar = identifyTrim(lnewcigar,mlength2)
             loff = mlength2
           elif tchecked.endswith("End"):
             ltrim, lnewcigar = identifyTrim(cigar,mlength,reverse=True)
+            ltrim2 = None
             loff = 0
           else:
             ltrim, lnewcigar = identifyTrim(cigar,mlength)
+            ltrim2 = None
             loff = mlength
+          #print tchecked,ltrim,loff,lnewcigar,read,ltrim2,mipID
           read = makeNewRead(ltrim,loff,lnewcigar,read,ltrim2,MIPid=mipID)
-
+          
           #if (lpos != start) or (lstrand != strand) or (lchrom != chrom):
             #sys.stderr.write("Found (%s): %s %d (%s) to %d %d\n"%(tchecked,chrom,start,"-" if strand else "+",mstart,mlength))
 
