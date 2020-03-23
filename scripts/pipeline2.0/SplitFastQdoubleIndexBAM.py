@@ -391,8 +391,10 @@ if ((options.start != None) and (options.start > 0)):
 else:
   options.start=None
 
-next_bases1=options.nextbases1.upper()
-next_bases2=options.nextbases2.upper()
+if len(options.nextbases1) == 0: next_bases1 = "N"*len(next_bases1)
+else: next_bases1=options.nextbases1.upper()
+if len(options.nextbases2) == 0: next_bases2 = "N"*len(next_bases2)
+else: next_bases2=options.nextbases2.upper()
 
 options.qualityN = options.qualityN.upper()
 options.qualityN_2nd = options.qualityN_2nd.upper()
