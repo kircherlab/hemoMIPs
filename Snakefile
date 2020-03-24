@@ -147,7 +147,7 @@ rule reheadering:
   output:"input/{dataset}/new_header.sam"
   conda: "envs/prep.yml"
   shell:"""
-        ( echo -e "@HD\tVN:1.4\tSO:queryname"; bwa mem {input.fasta} <( echo -e '@test\nNNNNN\n+\n!!!!!') 2> /dev/null | head -n -2; tail -n +2 {input.lst}  | awk 'BEGIN{{ FS="\\t"; OFS="\\t" }}{{ print "@RG","ID:"$2,"PL:Illumina","LB:"$2,"SM:"$2}}'     ) > {output}
+        ( echo -e "@HD\tVN:1.4\tSO:queryname"; bwa mem {input.fasta} <( echo -e '@test\nNNNNN\n+\n!!!!!') 2> /dev/null | head -n -2; tail -n +2 {input.lst}  | awk 'BEGIN{{ FS="\\t"; OFS="\\t" }}{{ print "@RG","ID:"$NF,"PL:Illumina","LB:"$NF,"SM:"$NF}}'     ) > {output}
         """
 def loadSamples(wc):
     file = open("input/%s/sample_index.lst" % wc.dataset, "r")
