@@ -24,7 +24,8 @@ rule all:
 #    <( zcat {input.I} ) \
 #    <( zcat {input.R2} | cut -c 120 ) | \
 #    awk '{{ count+=1; if ((count == 1) || (count == 3)) {{ print $1 }} else {{ print $1$2$3 }}; if (count == 4) {{ count=0 }} }}' | \
-#    scripts/pipeline2.0/SplitFastQdoubleIndexBAM.py --bases_after_index=ATCTCGTATGCCGTCTTCTGCTTG --bases_after_2ndindex='' -l 10 -m 0 -s 131 --summary -i {input.lst} -q 10 -p #--remove | scripts/pipeline2.0/MergeTrimReadsBAM.py --mergeoverlap -p \
+#    scripts/pipeline2.0/SplitFastQdoubleIndexBAM.py --bases_after_index=ATCTCGTATGCCGTCTTCTGCTTG --bases_after_2ndindex='' -l 10 -m 0 -s 131 --summary -i {input.lst} -q 10 -p \
+#    --remove | scripts/pipeline2.0/MergeTrimReadsBAM.py --mergeoverlap -p \
 #    > {output.bam} ) 2> {log}
 #    """
     
@@ -80,7 +81,7 @@ if config["parameters"]["paired_end_reads"] == "yes":
         <( zcat {input.I1} ) \
         <( zcat {input.R2} ) \
         <( zcat {input.I2} ) | \
-        awk '{{ count+=1; if ((count == 1) || (count == 3)) {{ print $1 }} else {{ print $1$2$3 }}; if (count == 4) {{ count=0 }} }}' | \
+        awk '{{ count+=1; if ((count == 1) || (count == 3)) {{ print $1 }} else {{ print $1$2$3$4 }}; if (count == 4) {{ count=0 }} }}' | \
         scripts/pipeline2.0/SplitFastQdoubleIndexBAM.py --bases_after_index=ATCTCGTATGCCGTCTTCTGCTTG --bases_after_2ndindex='' -l $index1length -m $index2length -s $read2start --summary -i {input.lst} -q 10 -p --remove | scripts/pipeline2.0/MergeTrimReadsBAM.py --mergeoverlap -p \
         > {output.bam} ) 2> {log}
         """
@@ -101,7 +102,7 @@ else:
         index1length=$(zcat {input.I} | head -n 2 | tail -n 1 | awk '{{ print length($1) }}')
         ( paste <( zcat {input.R1} ) \
         <( zcat {input.I} ) | \
-        awk '{{ count+=1; if ((count == 1) || (count == 3)) {{ print $1 }} else {{ print $1$2$3 }}; if (count == 4) {{ count=0 }} }}' | \
+        awk '{{ count+=1; if ((count == 1) || (count == 3)) {{ print $1 }} else {{ print $1$2 }}; if (count == 4) {{ count=0 }} }}' | \
         scripts/pipeline2.0/SplitFastQdoubleIndexBAM.py --bases_after_index=ATCTCGTATGCCGTCTTCTGCTTG --bases_after_2ndindex='' -l $index1length -m 0 --summary -i {input.lst} -q 10 -p --remove | scripts/pipeline2.0/MergeTrimReadsBAM.py --mergeoverlap -p \
         > {output.bam} ) 2> {log}
         """
