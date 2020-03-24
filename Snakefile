@@ -6,26 +6,132 @@ localrules: all
 rule all:
   input:
     directory(expand("output/{dataset}/report/{gatk}",gatk=config["GATK"],dataset=config["datasets"].keys()))
+    
+    
+#rule splithemophilia:
+#  input:
+#    R1="input/{dataset}/Undetermined_S0_L00{lane}_R1_001.fastq.gz",
+#    I="input/{dataset}/Undetermined_S0_L00{lane}_I1_001.fastq.gz",
+#    R2="input/{dataset}/Undetermined_S0_L00{lane}_R2_001.fastq.gz",
+#    lst="input/{dataset}/sample_index.lst"
+#  output:
+#    bam="output/{dataset}/mapping/sample_l{lane}.bam"
+#  log:
+#    "output/{dataset}/mapping/processing_stats_l{lane}.log"
+#  conda: "envs/python27.yml"
+#  shell:"""
+#    ( paste <( zcat {input.R1} | cut -c 120 ) \
+#    <( zcat {input.I} ) \
+#    <( zcat {input.R2} | cut -c 120 ) | \
+#    awk '{{ count+=1; if ((count == 1) || (count == 3)) {{ print $1 }} else {{ print $1$2$3 }}; if (count == 4) {{ count=0 }} }}' | \
+#    scripts/pipeline2.0/SplitFastQdoubleIndexBAM.py --bases_after_index=ATCTCGTATGCCGTCTTCTGCTTG --bases_after_2ndindex='' -l 10 -m 0 -s 131 --summary -i {input.lst} -q 10 -p #--remove | scripts/pipeline2.0/MergeTrimReadsBAM.py --mergeoverlap -p \
+#    > {output.bam} ) 2> {log}
+#    """
+    
+    
+    
+    
+    
+if config["parameters"]["paired_end_reads"] == "yes":    
+  if config["parameters"]["double_index"] == "no":
+    rule splithemophilia_PairedEnd_SingleIndex:
+      input:
+        R1="input/{dataset}/Undetermined_S0_L00{lane}_R1_001.fastq.gz",
+        I="input/{dataset}/Undetermined_S0_L00{lane}_I1_001.fastq.gz",
+        R2="input/{dataset}/Undetermined_S0_L00{lane}_R2_001.fastq.gz",
+        lst="input/{dataset}/sample_index.lst"
+      output:
+        bam="output/{dataset}/mapping/sample_l{lane}.bam"
+      log:
+        "output/{dataset}/mapping/processing_stats_l{lane}.log"
+      conda: "envs/python27.yml"
+      shell:"""
+        set +o pipefail
+        read1length=$(zcat {input.R1} | head -n 2 | tail -n 1 | awk '{{ print length($1) }}')
+        index1length=$(zcat {input.I} | head -n 2 | tail -n 1 | awk '{{ print length($1) }}')
+        read2start=$((read1length+index1length+1)) 
+        ( paste <( zcat {input.R1} ) \
+        <( zcat {input.I} ) \
+        <( zcat {input.R2} ) | \
+        awk '{{ count+=1; if ((count == 1) || (count == 3)) {{ print $1 }} else {{ print $1$2$3 }}; if (count == 4) {{ count=0 }} }}' | \
+        scripts/pipeline2.0/SplitFastQdoubleIndexBAM.py --bases_after_index=ATCTCGTATGCCGTCTTCTGCTTG --bases_after_2ndindex='' -l $index1length -m 0 -s $read2start --summary -i {input.lst} -q 10 -p --remove | scripts/pipeline2.0/MergeTrimReadsBAM.py --mergeoverlap -p \
+        > {output.bam} ) 2> {log}
+        """
+  else:
+    rule splithemophilia_PairedEnd_DoubleIndex:
+      input:
+        R1="input/{dataset}/Undetermined_S0_L00{lane}_R1_001.fastq.gz",
+        I1="input/{dataset}/Undetermined_S0_L00{lane}_I1_001.fastq.gz",
+        I2="input/{dataset}/Undetermined_S0_L00{lane}_I2_001.fastq.gz",
+        R2="input/{dataset}/Undetermined_S0_L00{lane}_R2_001.fastq.gz",
+        lst="input/{dataset}/sample_index.lst"
+      output:
+        bam="output/{dataset}/mapping/sample_l{lane}.bam"
+      log:
+        "output/{dataset}/mapping/processing_stats_l{lane}.log"
+      conda: "envs/python27.yml"
+      shell:"""
+        set +o pipefail
+        read1length=$(zcat {input.R1} | head -n 2 | tail -n 1 | awk '{{ print length($1) }}')
+        index1length=$(zcat {input.I1} | head -n 2 | tail -n 1 | awk '{{ print length($1) }}')
+        index2length=$(zcat {input.I2} | head -n 2 | tail -n 1 | awk '{{ print length($1) }}')
+        read2start=$((read1length+index1length+1)) 
+        ( paste <( zcat {input.R1} ) \
+        <( zcat {input.I1} ) \
+        <( zcat {input.R2} ) \
+        <( zcat {input.I2} ) | \
+        awk '{{ count+=1; if ((count == 1) || (count == 3)) {{ print $1 }} else {{ print $1$2$3 }}; if (count == 4) {{ count=0 }} }}' | \
+        scripts/pipeline2.0/SplitFastQdoubleIndexBAM.py --bases_after_index=ATCTCGTATGCCGTCTTCTGCTTG --bases_after_2ndindex='' -l $index1length -m $index2length -s $read2start --summary -i {input.lst} -q 10 -p --remove | scripts/pipeline2.0/MergeTrimReadsBAM.py --mergeoverlap -p \
+        > {output.bam} ) 2> {log}
+        """
+else:
+  if config["parameters"]["double_index"] == "no":
+    rule splithemophilia_SingleRead_SingleIndex:
+      input:
+        R1="input/{dataset}/Undetermined_S0_L00{lane}_R1_001.fastq.gz",
+        I="input/{dataset}/Undetermined_S0_L00{lane}_I1_001.fastq.gz",
+        lst="input/{dataset}/sample_index.lst"
+      output:
+        bam="output/{dataset}/mapping/sample_l{lane}.bam"
+      log:
+        "output/{dataset}/mapping/processing_stats_l{lane}.log"
+      conda: "envs/python27.yml"
+      shell:"""
+        set +o pipefail
+        index1length=$(zcat {input.I} | head -n 2 | tail -n 1 | awk '{{ print length($1) }}')
+        ( paste <( zcat {input.R1} ) \
+        <( zcat {input.I} ) | \
+        awk '{{ count+=1; if ((count == 1) || (count == 3)) {{ print $1 }} else {{ print $1$2$3 }}; if (count == 4) {{ count=0 }} }}' | \
+        scripts/pipeline2.0/SplitFastQdoubleIndexBAM.py --bases_after_index=ATCTCGTATGCCGTCTTCTGCTTG --bases_after_2ndindex='' -l $index1length -m 0 --summary -i {input.lst} -q 10 -p --remove | scripts/pipeline2.0/MergeTrimReadsBAM.py --mergeoverlap -p \
+        > {output.bam} ) 2> {log}
+        """
 
-rule splithemophilia:
-  input:
-    R1="input/{dataset}/Undetermined_S0_L00{lane}_R1_001.fastq.gz",
-    I="input/{dataset}/Undetermined_S0_L00{lane}_I1_001.fastq.gz",
-    R2="input/{dataset}/Undetermined_S0_L00{lane}_R2_001.fastq.gz",
-    lst="input/{dataset}/sample_index.lst"
-  output:
-    bam="output/{dataset}/mapping/sample_l{lane}.bam"
-  log:
-    "output/{dataset}/mapping/processing_stats_l{lane}.log"
-  conda: "envs/python27.yml"
-  shell:"""
-    ( paste <( zcat {input.R1} | cut -c 120 ) \
-    <( zcat {input.I} ) \
-    <( zcat {input.R2} | cut -c 120 ) | \
-    awk '{{ count+=1; if ((count == 1) || (count == 3)) {{ print $1 }} else {{ print $1$2$3 }}; if (count == 4) {{ count=0 }} }}' | \
-    scripts/pipeline2.0/SplitFastQdoubleIndexBAM.py --bases_after_index=ATCTCGTATGCCGTCTTCTGCTTG --bases_after_2ndindex='' -l 10 -m 0 -s 131 --summary -i {input.lst} -q 10 -p --remove | scripts/pipeline2.0/MergeTrimReadsBAM.py --mergeoverlap -p \
-    > {output.bam} ) 2> {log}
-    """
+  else:
+    rule splithemophilia_SingleRead_DoubleIndex:
+      input:
+        R1="input/{dataset}/Undetermined_S0_L00{lane}_R1_001.fastq.gz",
+        I1="input/{dataset}/Undetermined_S0_L00{lane}_I1_001.fastq.gz",
+        I2="input/{dataset}/Undetermined_S0_L00{lane}_I2_001.fastq.gz",
+        lst="input/{dataset}/sample_index.lst"
+      output:
+        bam="output/{dataset}/mapping/sample_l{lane}.bam"
+      log:
+        "output/{dataset}/mapping/processing_stats_l{lane}.log"
+      conda: "envs/python27.yml"
+      shell:"""
+        set +o pipefail
+        index1length=$(zcat {input.I1} | head -n 2 | tail -n 1 | awk '{{ print length($1) }}')
+        index2length=$(zcat {input.I2} | head -n 2 | tail -n 1 | awk '{{ print length($1) }}')
+        ( paste <( zcat {input.R1} ) \
+        <( zcat {input.I1} ) \
+        <( zcat {input.I2} ) | \
+        awk '{{ count+=1; if ((count == 1) || (count == 3)) {{ print $1 }} else {{ print $1$2$3 }}; if (count == 4) {{ count=0 }} }}' | \
+        scripts/pipeline2.0/SplitFastQdoubleIndexBAM.py --bases_after_index=ATCTCGTATGCCGTCTTCTGCTTG --bases_after_2ndindex='' -l $index1length -m $index2length --summary -i {input.lst} -q 10 -p --remove | scripts/pipeline2.0/MergeTrimReadsBAM.py --mergeoverlap -p \
+        > {output.bam} ) 2> {log}
+        """
+
+    
+    
 def getLaneBAMs(wc):
   return(expand("output/{dataset}/mapping/sample_l{lane}.bam", dataset=wc.dataset,lane=config["datasets"][wc.dataset]["lanes"]))
 
@@ -52,29 +158,53 @@ def loadSamples(wc):
       output.append(line.split("\t")[-1].strip())
     return(output)
 
-rule bysample:
-  input:
-    bam="output/{dataset}/mapping/sample.bam"
-  output:
-    "output/{dataset}/mapping/by_sample/{plate}.bam"
-  params:
-    plate="{plate}"
-  conda: "envs/python27.yml"
-  shell: """
-    samtools view -u -F 513 -r {params.plate} {input.bam} | scripts/pipeline2.0/FilterBAM.py -q --qual_number 5 --qual_cutoff=15 -p > {output}
-    """
+if config["parameters"]["paired_end_reads"] == "yes":
+  rule bysample_PairedEnd:
+    input:
+      bam="output/{dataset}/mapping/sample.bam"
+    output:
+      "output/{dataset}/mapping/by_sample/{plate}.bam"
+    params:
+      plate="{plate}"
+    conda: "envs/python27.yml"
+    shell: """
+      samtools view -u -F 513 -r {params.plate} {input.bam} | scripts/pipeline2.0/FilterBAM.py -q --qual_number 5 --qual_cutoff=15 -p > {output}
+      """
+  rule aligning_PairedEnd:
+    input:
+      bam="output/{dataset}/mapping/by_sample/{plate}.bam",
+      fasta=config["references"]["bwa"],
+      design="input/{dataset}/hemomips_design.txt",
+      new_header="input/{dataset}/new_header.sam"
+    output: "output/{dataset}/mapping/aligned/{plate}.bam"
+    conda: "envs/python27.yml"
+    shell:"""
+      bwa mem -L 80 -M -C {input.fasta} <( samtools view -F 513 {input.bam} | awk 'BEGIN{{ OFS="\\n"; FS="\\t" }}{{ print "@"$1"\\t"$12"\\t"$13"\\t"$14,$10,"+",$11 }}' ) | samtools view -u - | samtools sort - | scripts/pipeline2.0/TrimMIParms.py -d {input.design} -p | samtools reheader {input.new_header} - | samtools sort -o {output} -
+      """
 
-rule aligning:
-  input:
-    bam="output/{dataset}/mapping/by_sample/{plate}.bam",
-    fasta=config["references"]["bwa"],
-    design="input/{dataset}/hemomips_design.txt",
-    new_header="input/{dataset}/new_header.sam"
-  output: "output/{dataset}/mapping/aligned/{plate}.bam"
-  conda: "envs/python27.yml"
-  shell:"""
-    bwa mem -L 80 -M -C {input.fasta} <( samtools view -F 513 {input.bam} | awk 'BEGIN{{ OFS="\\n"; FS="\\t" }}{{ print "@"$1"\\t"$12"\\t"$13"\\t"$14,$10,"+",$11 }}' ) | samtools view -u - | samtools sort - | scripts/pipeline2.0/TrimMIParms.py -d {input.design} -p | samtools reheader {input.new_header} - | samtools sort -o {output} -
-    """
+else:
+  rule bysample_SingleRead:
+    input:
+      bam="output/{dataset}/mapping/sample.bam"
+    output:
+      "output/{dataset}/mapping/by_sample/{plate}.bam"
+    params:
+      plate="{plate}"
+    conda: "envs/python27.yml"
+    shell: """
+      samtools view -u -F 512 -r {params.plate} {input.bam} | scripts/pipeline2.0/FilterBAM.py -q --qual_number 5 --qual_cutoff=15 -p > {output}
+      """
+  rule aligning_SingleRead:
+    input:
+      bam="output/{dataset}/mapping/by_sample/{plate}.bam",
+      fasta=config["references"]["bwa"],
+      design="input/{dataset}/hemomips_design.txt",
+      new_header="input/{dataset}/new_header.sam"
+    output: "output/{dataset}/mapping/aligned/{plate}.bam"
+    conda: "envs/python27.yml"
+    shell:"""
+      bwa mem -L 80 -M -C {input.fasta} <( samtools view -F 512 {input.bam} | awk 'BEGIN{{ OFS="\\n"; FS="\\t" }}{{ print "@"$1"\\t"$12"\\t"$13"\\t"$14,$10,"+",$11 }}' ) | samtools view -u - | samtools sort - | scripts/pipeline2.0/TrimMIParms.py -d {input.design} -p | samtools reheader {input.new_header} - | samtools sort -o {output} -
+      """
 
 rule indexing:
   input: "output/{dataset}/mapping/aligned/{plate}.bam"
@@ -122,25 +252,40 @@ if config["parameters"]["inv"] == "yes":
   def sampleBamsInversion(wc):
       return (expand("output/{dataset}/mapping/inversion_mips/{plate}.bam", dataset=wc.dataset, plate=loadSamples(wc)))
 
-  rule inversionsum:
-    input:
-      lst="input/{dataset}/sample_index.lst",
-      bam=sampleBamsInversion
-    output:"output/{dataset}/mapping/inversion_mips/inversion_summary_counts.txt"
-    conda: "envs/prep.yml"
-    shell: """
-      (for bam in {input.bam}; do
-        i=`basename $bam ".bam"`;
-        echo $i $( ( samtools view -F 513 $bam | awk 'BEGIN{{ FS="\\t" }}{{ split($12,a,":"); if (($6 !~ /S/) && (a[1] == "NM") && (a[3] <= 10)) {{ print $3 }} }}'; samtools view -f 2 -F 512 $bam | awk 'BEGIN{{ FS="\\t"; OFS="\\t" }}{{ split($12,a,":"); if (($6 !~ /S/) && (a[1] == "NM") && (a[3] <= 10)) {{ print $1,$3 }} }}' | sort | uniq -c | awk '{{ if ($1 == 2) print $3 }}' ) | sort | uniq -c | awk '{{ print $1":"$2 }}' );
-        done )> {output}
-      """
+  if config["parameters"]["paired_end_reads"] == "yes":
+    rule inversionsum_PairedEnd:
+      input:
+        lst="input/{dataset}/sample_index.lst",
+        bam=sampleBamsInversion
+      output:"output/{dataset}/mapping/inversion_mips/inversion_summary_counts.txt"
+      conda: "envs/prep.yml"
+      shell: """
+        (for bam in {input.bam}; do
+          i=`basename $bam ".bam"`;
+          echo $i $( ( samtools view -F 513 $bam | awk 'BEGIN{{ FS="\\t" }}{{ split($12,a,":"); if (($6 !~ /S/) && (a[1] == "NM") && (a[3] <= 10)) {{ print $3 }} }}'; samtools view -f 2 -F 512 $bam | awk 'BEGIN{{ FS="\\t"; OFS="\\t" }}{{ split($12,a,":"); if (($6 !~ /S/) && (a[1] == "NM") && (a[3] <= 10)) {{ print $1,$3 }} }}' | sort | uniq -c | awk '{{ if ($1 == 2) print $3 }}' ) | sort | uniq -c | awk '{{ print $1":"$2 }}' );
+          done )> {output}
+        """
 
+  else:
+    rule inversionsum_SingleRead:
+      input:
+        lst="input/{dataset}/sample_index.lst",
+        bam=sampleBamsInversion
+      output:"output/{dataset}/mapping/inversion_mips/inversion_summary_counts.txt"
+      conda: "envs/prep.yml"
+      shell: """
+        (for bam in {input.bam}; do
+          i=`basename $bam ".bam"`;
+          echo $i $( ( samtools view -F 512 $bam | awk 'BEGIN{{ FS="\\t" }}{{ split($12,a,":"); if (($6 !~ /S/) && (a[1] == "NM") && (a[3] <= 10)) {{ print $3 }} }}'; samtools view -f 2 -F 512 $bam | awk 'BEGIN{{ FS="\\t"; OFS="\\t" }}{{ split($12,a,":"); if (($6 !~ /S/) && (a[1] == "NM") && (a[3] <= 10)) {{ print $1,$3 }} }}' | sort | uniq -c | awk '{{ if ($1 == 2) print $3 }}' ) | sort | uniq -c | awk '{{ print $1":"$2 }}' );
+          done )> {output}
+        """
+     
 else:
   rule no_inversions:
     input: lst="input/{dataset}/sample_index.lst",
     output:"output/{dataset}/mapping/inversion_mips/inversion_summary_counts.txt"
     shell:"""
-      awk '{{ print $NF }}' {input.lst} | tail -n +2 > {output}
+      cut -f2 {input.lst} | tail -n +2 > {output}
       """
   
 
@@ -175,7 +320,7 @@ rule gatk4_gvcfs:
     fasta=config["references"]["fasta"],
     targets="input/{dataset}/targets.intervals",
     bam="output/{dataset}/mapping/aligned/{plate}.bam",
-    idx="output/{dataset}/mapping/aligned/{plate}.bai",
+    idx="output/{dataset}/mapping/aligned/{plate}.bai"
   output:
     vcfgz="output/{dataset}/report/gvcf/{plate}.g.vcf.gz"
   params:
