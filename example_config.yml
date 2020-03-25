@@ -16,13 +16,14 @@ tools:
    vep_cache: "vep_cache/" # Cache folder for Ensembl VEP
 
 parameters:
+   inv: "yes" #set to "yes" when inversion design is provided
+   paired_end_reads: "yes" #set to "yes" when paired end sequencing is applied
+   double_index: "no" #set to yes when double indexing is applied
    vep-version: 98 #vep version, recommended v98
    vep-species: "homo_sapiens" #vep cache species
    vep-assembly: "GRCh37" # vep cache genome assembly
    transcripts: "#|ENST00000360256|ENST00000218099" # list of considered transcripts separated by pipes, do not remove the leading hash and pipe.
-   read-length: 1-120 #read length
-   inv: "yes" # set to "no" if no MIP design to detect Inversions is included, also look at the manual and into lines 138-169 of the summary_report.py if the inversions are different from Johnsen et al.
-
+  
 GATK:
   - gatk4
 #  - gatk3
