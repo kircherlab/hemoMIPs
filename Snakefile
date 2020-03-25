@@ -219,53 +219,36 @@ if config["parameters"]["inv"] == "yes":
     shell: """
       (   grep "@RG" {input.sam}; \
           bwa mem -M -L 80 -C {input.inv} <(
-              samtools view -r {params.plate} -F 1 {input.bam} | awk 'BEGIN{{ OFS="\\n" }}{{ if (length($10) >= 75) {{ print "@"$1" "$12"\\t"$13"\\t"$14,$10,"+",$11 }} }}' \
+              samtools view -r {params.plate} -F 1 {input.bam} | awk 'BEGIN{{ OFS="\\n" }}{{ if (length($10) >= 75) {{ print "@"$1,$10,"+",$11 }} }}' \
           ) | awk '{{ if (($0 ~ /^@/) || ($3 ~ /^inv/)) print }}'; \
           bwa mem -M -L 80 -p -C {input.inv} <( \
-              samtools view -r {params.plate} -f 1 {input.bam} | awk 'BEGIN{{ OFS="\\n" }}{{ print "@"$1" "$12"\\t"$13"\\t"$14,$10,"+",$11 }}' \
+              samtools view -r {params.plate} -f 1 {input.bam} | awk 'BEGIN{{ OFS="\\n" }}{{ print "@"$1,$10,"+",$11 }}' \
           ) | awk '{{ if (($0 !~ /^@/) && ($3 ~ /^inv/)) print }}' \
       ) | samtools view -b -F 768 - | samtools sort -O bam -o {output} -
       """   
-
-
-      
+    
   def sampleBamsInversion(wc):
       return (expand("output/{dataset}/mapping/inversion_mips/{plate}.bam", dataset=wc.dataset, plate=loadSamples(wc)))
 
-  if config["parameters"]["paired_end_reads"] == "yes":
-    rule inversionsum_PairedEnd:
-      input:
-        lst="input/{dataset}/sample_index.lst",
-        bam=sampleBamsInversion
-      output:"output/{dataset}/mapping/inversion_mips/inversion_summary_counts.txt"
-      conda: "envs/prep.yml"
-      shell: """
-        (for bam in {input.bam}; do
-          i=`basename $bam ".bam"`;
-          echo $i $( ( samtools view -F 513 $bam | awk 'BEGIN{{ FS="\\t" }}{{ split($12,a,":"); if (($6 !~ /S/) && (a[1] == "NM") && (a[3] <= 10)) {{ print $3 }} }}'; samtools view -f 2 -F 512 $bam | awk 'BEGIN{{ FS="\\t"; OFS="\\t" }}{{ split($12,a,":"); if (($6 !~ /S/) && (a[1] == "NM") && (a[3] <= 10)) {{ print $1,$3 }} }}' | sort | uniq -c | awk '{{ if ($1 == 2) print $3 }}' ) | sort | uniq -c | awk '{{ print $1":"$2 }}' );
-          done )> {output}
-        """
-
-  else:
-    rule inversionsum_SingleRead:
-      input:
-        lst="input/{dataset}/sample_index.lst",
-        bam=sampleBamsInversion
-      output:"output/{dataset}/mapping/inversion_mips/inversion_summary_counts.txt"
-      conda: "envs/prep.yml"
-      shell: """
-        (for bam in {input.bam}; do
-          i=`basename $bam ".bam"`;
-          echo $i $( ( samtools view -F 512 $bam | awk 'BEGIN{{ FS="\\t" }}{{ split($12,a,":"); if (($6 !~ /S/) && (a[1] == "NM") && (a[3] <= 10)) {{ print $3 }} }}'; samtools view -f 2 -F 512 $bam | awk 'BEGIN{{ FS="\\t"; OFS="\\t" }}{{ split($12,a,":"); if (($6 !~ /S/) && (a[1] == "NM") && (a[3] <= 10)) {{ print $1,$3 }} }}' | sort | uniq -c | awk '{{ if ($1 == 2) print $3 }}' ) | sort | uniq -c | awk '{{ print $1":"$2 }}' );
-          done )> {output}
-        """
+  rule inversionsum:
+    input:
+      lst="input/{dataset}/sample_index.lst",
+      bam=sampleBamsInversion
+    output:"output/{dataset}/mapping/inversion_mips/inversion_summary_counts.txt"
+    conda: "envs/prep.yml"
+    shell: """
+      (for bam in {input.bam}; do
+        i=`basename $bam ".bam"`;
+        echo $i $( ( samtools view -F 513 $bam | awk 'BEGIN{{ FS="\\t" }}{{ split($12,a,":"); if (($6 !~ /S/) && (a[1] == "NM") && (a[3] <= 10)) {{ print $3 }} }}'; samtools view -f 2 -F 512 $bam | awk 'BEGIN{{ FS="\\t"; OFS="\\t" }}{{ split($12,a,":"); if (($6 !~ /S/) && (a[1] == "NM") && (a[3] <= 10)) {{ print $1,$3 }} }}' | sort | uniq -c | awk '{{ if ($1 == 2) print $3 }}' ) | sort | uniq -c | awk '{{ print $1":"$2 }}' );
+        done )> {output}
+      """
      
 else:
   rule no_inversions:
     input: lst="input/{dataset}/sample_index.lst",
     output:"output/{dataset}/mapping/inversion_mips/inversion_summary_counts.txt"
     shell:"""
-      cut -f2 {input.lst} | tail -n +2 > {output}
+      awk {{ print $NF }} {input.lst} | tail -n +2 > {output}
       """
   
 
