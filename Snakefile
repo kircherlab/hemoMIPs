@@ -165,7 +165,7 @@ rule bysample:
   output:
     "output/{dataset}/mapping/by_sample/{plate}.bam"
   params:
-    samflag = 513 if (config["parameters"]["paired_end_reads"] == "yes") else 512
+    samflag = 513 if (config["parameters"]["paired_end_reads"] == "yes") else 512,
     plate="{plate}"
   conda: "envs/python27.yml"
   shell: """
