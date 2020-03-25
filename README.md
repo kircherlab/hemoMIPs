@@ -84,6 +84,15 @@ conda env remove --name prepTools
 ## Config
 
 Almost ready to go. After you prepared files as above, you need to adjust the locations of these files in the `config.yml`.\
+Further specify wether you want to analyze paired-end read or single molecule read data as well as your index design (single or double index) in the `config.yml`. Set the parameters in the config file accordingly:\
+
+```
+parameters:
+   inv: "yes" #set to "no" when no inversion design is provided
+   paired_end_reads: "yes" #set to "no" when single molecule sequencing is applied
+   double_index: "no" #set to yes when double indexing is applied
+```
+
 An example config can be found in `example_config.yml`. If you would like to run the example data set, please copy it to config.yml:
 
 ```bash
@@ -148,7 +157,7 @@ X_138645149_T/C
 
 ### Barcode to sample assignment
 
-A two or three column tab-separated file is required with the sequencing barcode information. The sample name will be used throughout the processing and reporting. The barcode sequence is assumed to be in the first index read of the Illumina sequencing run (I1 FastQ read file). The pipeline can also handle double index designs. An example for the sample assignment file is provided below:
+A two or three column tab-separated file is required with the sequencing barcode information. The sample name will be used throughout the processing and reporting. The barcode sequence is assumed to be in the first index read of the Illumina sequencing run (I1 FastQ read file for single index, I1 and I2 for double index). The pipeline can also handle double index designs. An example for the sample assignment file is provided below:
 
 Single Index
 ```
@@ -163,7 +172,7 @@ GGATTCTCG	Plate_001_01F.6
 Double Index
 ```
 #Seq1 Seq2  Name
-CATGCGAGA CATGCGAGA	Plate_001_01A.1
+CATGCGAGA CATGCGAGA Plate_001_01A.1
 ```
 
 ## Run pipeline
