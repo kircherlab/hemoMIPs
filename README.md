@@ -84,7 +84,7 @@ conda env remove --name prepTools
 ## Config
 
 Almost ready to go. After you prepared files as above, you need to adjust the locations of these files in the `config.yml`.\
-Further specify wether you want to analyze paired-end read or single molecule read data as well as your index design (single or double index) in the `config.yml`. Set the parameters in the config file accordingly:\
+Further specify wether you want to analyze paired-end read or single molecule read data as well as your index design (single or double index) in the `config.yml`. Set the parameters in the config file accordingly: 
 
 ```
 parameters:
