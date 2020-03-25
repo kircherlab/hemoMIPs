@@ -159,32 +159,32 @@ def loadSamples(wc):
       output.append(line.split("\t")[-1].strip())
     return(output)
 
-  rule bysample:
-    input:
-      bam="output/{dataset}/mapping/sample.bam"
-    output:
-      "output/{dataset}/mapping/by_sample/{plate}.bam"
-    params:
-      samflag = 513 if (config["parameters"]["paired_end_reads"] == "yes") else 512
-      plate="{plate}"
-    conda: "envs/python27.yml"
-    shell: """
-      samtools view -u -F {params.samflag} -r {params.plate} {input.bam} | scripts/pipeline2.0/FilterBAM.py -q --qual_number 5 --qual_cutoff=15 -p > {output}
-      """
+rule bysample:
+  input:
+    bam="output/{dataset}/mapping/sample.bam"
+  output:
+    "output/{dataset}/mapping/by_sample/{plate}.bam"
+  params:
+    samflag = 513 if (config["parameters"]["paired_end_reads"] == "yes") else 512
+    plate="{plate}"
+  conda: "envs/python27.yml"
+  shell: """
+    samtools view -u -F {params.samflag} -r {params.plate} {input.bam} | scripts/pipeline2.0/FilterBAM.py -q --qual_number 5 --qual_cutoff=15 -p > {output}
+    """
       
-  rule aligning:
-    input:
-      bam="output/{dataset}/mapping/by_sample/{plate}.bam",
-      fasta=config["references"]["bwa"],
-      design="input/{dataset}/hemomips_design.txt",
-      new_header="input/{dataset}/new_header.sam"
-    output: "output/{dataset}/mapping/aligned/{plate}.bam"
-    params:
-      samflag = 513 if (config["parameters"]["paired_end_reads"] == "yes") else 512
-    conda: "envs/python27.yml"
-    shell:"""
-      bwa mem -L 80 -M -C {input.fasta} <( samtools view -F {params.samflag} {input.bam} | awk 'BEGIN{{ OFS="\\n"; FS="\\t" }}{{ helper = ""; for (i=12; i <= NF; i++) {{ helper = helper""$i"\\t" }}; sub("\\t$","",helper); print "@"$1" "helper,$10,"+",$11 }}' ) | samtools view -u - | samtools sort - | scripts/pipeline2.0/TrimMIParms.py -d {input.design} -p | samtools reheader {input.new_header} - | samtools sort -o {output} -
-      """
+rule aligning:
+  input:
+    bam="output/{dataset}/mapping/by_sample/{plate}.bam",
+    fasta=config["references"]["bwa"],
+    design="input/{dataset}/hemomips_design.txt",
+    new_header="input/{dataset}/new_header.sam"
+  output: "output/{dataset}/mapping/aligned/{plate}.bam"
+  params:
+    samflag = 513 if (config["parameters"]["paired_end_reads"] == "yes") else 512
+  conda: "envs/python27.yml"
+  shell:"""
+    bwa mem -L 80 -M -C {input.fasta} <( samtools view -F {params.samflag} {input.bam} | awk 'BEGIN{{ OFS="\\n"; FS="\\t" }}{{ helper = ""; for (i=12; i <= NF; i++) {{ helper = helper""$i"\\t" }}; sub("\\t$","",helper); print "@"$1" "helper,$10,"+",$11 }}' ) | samtools view -u - | samtools sort - | scripts/pipeline2.0/TrimMIParms.py -d {input.design} -p | samtools reheader {input.new_header} - | samtools sort -o {output} -
+    """
    
 rule indexing:
   input: "output/{dataset}/mapping/aligned/{plate}.bam"
