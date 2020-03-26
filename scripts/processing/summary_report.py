@@ -113,8 +113,8 @@ parser.add_option("-f", "--factor", dest="factor", help="Allowed deviation for M
 parser.add_option("-m","--mipstats", dest="mipstats", help="File with MIP performance counts (def 'realign_all_samples.MIPstats.tsv')",default="realign_all_samples.MIPstats.tsv")
 parser.add_option("-c","--indelCheck", dest="indelCheck", help="Only report indels with count evidence (def 'realign_all_samples.indel_check.txt')",default="realign_all_samples.indel_check.txt")
 parser.add_option("-d", "--design", dest="design", help="MIP design file (default hemomips_design.txt)",default="hemomips_design.txt")
-parser.add_option("--TG", dest="TG", help="1000 Genomes variant tabix file" )
-parser.add_option("-b", "--benign",dest="benign", help="List of benign variants" )
+parser.add_option("--TG", dest="TG", help="1000 Genomes variant tabix file",default="")
+parser.add_option("-b", "--benign",dest="benign", help="List of benign variants",default="")
 #parser.add_option("--freq", dest="freq", help="Maximum 1000 Genomes allele frequency (def 0.05)",type="float",default=0.05)
 (options, args) = parser.parse_args()
 
@@ -424,6 +424,7 @@ for line in infile:
         if region_name == None: continue
         gene_name = region_name.split("/")[0]
         genes.add(gene_name)
+        sites_gene[gene_name]=set()
         
       #VCFline = dict(zip(header,fields))
       if ('<NON_REF>' in fields[falt]):
