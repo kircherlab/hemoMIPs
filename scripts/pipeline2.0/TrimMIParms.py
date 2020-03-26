@@ -116,7 +116,9 @@ if options.verbose:
   sys.stderr.write("Evaluating design file.\n")
 
 ligArms = {}
+ligArmsRange = {}
 extArms = {}
+extArmsRange = {}
 
 if os.path.exists(options.design):
   # DESIGN FILE ARM RANGES ARE 1-BASED, CLOSED INTERVALS
@@ -138,7 +140,13 @@ if os.path.exists(options.design):
         chrom,lstart,lend,estart,eend,strand,mipname = fields[fchrom],int(fields[ligStart])-1,int(fields[ligEnd]),int(fields[extStart])-1,int(fields[extEnd]),fields[fstrand],fields[fmipname]
         if chrom not in ligArms: 
           ligArms[chrom] = IntervalTree()
+          ligArmsRange[chrom] = IntervalTree()
           extArms[chrom] = IntervalTree()
+          extArmsRange[chrom] = IntervalTree()
+
+        ligArmsRange[chrom].add_interval( Interval(lstart, lend+1, value = (lend-lstart,mipname) ) ) 
+        extArmsRange[chrom].add_interval( Interval(estart, eend+1, value = (eend-estart,mipname) ) )
+
         if strand == "+":
           ligArms[chrom].add_interval( Interval(lend, lend+1, value = (lend-lstart,mipname) ) )
           extArms[chrom].add_interval( Interval(estart+1, estart+2, value = (eend-estart,mipname) ) )
@@ -232,49 +240,66 @@ for read in infile:
             found = True
             break
       else:
-        if not strand: # EXPECT LIGATION ARM FOR READ START AND EXTENSION ARM FOR READ END
-          #sys.stderr.write('%d %d\n'%(start,end))
-          for match in extArms[chrom].find(end-1,end+2):
-            #sys.stderr.write('Found ExtArmEnd\n')
-            mstart,mlength,mname = match.start,match.value[0],match.value[1]
-            mlength -= (mstart-end)
-            found = True
-            tchecked = "ExtArmEnd"
-            break
-  
+        if not strand: # EXPECT LIGATION ARM FOR READ START AND EXTENSION ARM FOR READ END (pot. partial)
           for match in ligArms[chrom].find(start-1,start+2):
-            #sys.stderr.write('Found LigArmStart\n')
-            mstart2,mlength2,mname2 = match.start,match.value[0],match.value[1]
-            mlength2 += (mstart2-start)
+            mstart,mlength,mname = match.start,match.value[0],match.value[1]
+            mlength += (mstart-start)
             found = True
-            if tchecked != None: 
-              tchecked += ";LigArmStart"
-            else:
-              tchecked = "LigArmStart"
-              mstart,mlength,mname = mstart2,mlength2,mname2
-              mstart2,mlength2,mname2 = None,None,None 
+            tchecked = "LigArmStart"
             break
 
-        else: # EXPECT LIGATION ARM FOR READ END AND EXTENSION ARM FOR READ START
-          #sys.stderr.write('%d %d\n'%(start,end))
-          for match in ligArms[chrom].find(end-1,end+2):
+          for match in extArms[chrom].find(end-1,end+2):
+            mstart2,mlength2,mname2 = mstart,mlength,mname
+            mstart,mlength,mname = match.start,match.value[0],match.value[1]
+            mlength -= (mstart-end)
+            found2 = True
+            if tchecked != None:
+              tchecked = "ExtArmEnd;"+tchecked
+            else:
+              tchecked = "ExtArmEnd"
+              found = True
+              mstart2,mlength2,mname2 = None,None,None
+            break
+
+          if found and not found2: # check for partial overlap
+            for match in extArmsRange[chrom].find(end-1,end+2):
+               if match.value[1] == mname:
+                 mstart2,mlength2,mname2 = mstart,mlength,mname
+                 mstart,mlength,mname = match.start,(end-match.start),match.value[1]
+                 found2 = True
+                 tchecked = "ExtArmEnd;"+tchecked
+                 break
+
+
+        else: # EXPECT LIGATION ARM FOR READ END AND EXTENSION ARM FOR READ START (pot. partial) 
+          for match in ligArms[chrom].find(end-1,end+2): 
             mstart,mlength,mname = match.start,match.value[0],match.value[1]
             mlength -= (mstart-end)
             found = True
             tchecked = "LigArmEnd"
             break
 
-          for match in extArms[chrom].find(start-1,start+2):
+          for match in extArms[chrom].find(start-1,start+2): 
             mstart2,mlength2,mname2 = match.start,match.value[0],match.value[1]
             mlength2 += (mstart2-start)
-            found = True
+            found2 = True
             if tchecked != None:
               tchecked += ";ExtArmStart"  
             else:
               tchecked = "ExtArmStart"
+              found = True
               mstart,mlength,mname = mstart2,mlength2,mname2
               mstart2,mlength2,mname2 = None,None,None
             break
+          
+          if found and not found2: # check for partial overlap
+            for match in extArmsRange[chrom].find(start-1,start+2):
+               if match.value[1] == mname:
+                 mstart2,mlength2,mname2 = start,(match.end-start),match.value[1]
+                 found2 = True
+                 tchecked += ";ExtArmStart"
+                 break
+
         
       if found:
         mipID = None
@@ -285,10 +310,12 @@ for read in infile:
           helper.sort()
           mipID = "-".join(helper)
 
+        #sys.stderr.write('%s\n'%(tchecked))
         if (tchecked == ltchecked) and (lpos == start) and (lchrom == chrom) and (lstrand == strand) and (lcigar == cigar):
           read = makeNewRead(ltrim,loff,lnewcigar,read,ltrim2,MIPid=mipID)
         else:
           if (tchecked == "LigArmEnd;ExtArmStart") or (tchecked == "ExtArmEnd;LigArmStart"):
+            #print tchecked,strand, mlength,"rev", mlength2,"for"
             ltrim, lnewcigar = identifyTrim(cigar,mlength,reverse=True)
             ltrim2, lnewcigar = identifyTrim(lnewcigar,mlength2)
             loff = mlength2
