@@ -17,7 +17,7 @@ tools:
 
 parameters:
    inv: "yes" #set to "yes" when inversion design is provided
-   paired_end_reads: "yes" #set to "yes" when paired end sequencing is applied
+   paired_end_reads: "yes" #set to "yes" when paired-end sequencing is applied
    double_index: "no" #set to yes when double indexing is applied
    vep-version: 98 #vep version, recommended v98
    vep-species: "homo_sapiens" #vep cache species
