@@ -285,7 +285,7 @@ rule gatk4_gvcfs:
     bam="output/{dataset}/mapping/aligned/{plate}.bam",
     idx="output/{dataset}/mapping/aligned/{plate}.bai"
   output:
-    vcfgz="output/{dataset}/mapping/gvcf/{plate}.g.vcf.gz"
+    vcfgz="output/{dataset}/mapping/gatk4/gvcf/{plate}.g.vcf.gz"
   params:
     plate="{plate}"
   conda:"envs/gatk4.yml"
@@ -294,7 +294,7 @@ rule gatk4_gvcfs:
     """
 
 def sampleBamsInversion(wc):
-  return (expand("output/{dataset}/mapping/gvcf/{plate}.g.vcf.gz", dataset=wc.dataset, plate=loadSamples(wc)))
+  return (expand("output/{dataset}/mapping/gatk4/gvcf/{plate}.g.vcf.gz", dataset=wc.dataset, plate=loadSamples(wc)))
 
 rule gatk4_combine:
   input:fasta=config["references"]["fasta"],
