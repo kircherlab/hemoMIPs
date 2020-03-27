@@ -190,6 +190,23 @@ snakemake  --use-conda --configfile config.yml
 
 We added an example_results folder to enable the user to compare the output of the example_dataset analysis to our results.
 
+## Output files
+
+The pipeline outputs varies files as intermediate step as well as final analysis tables for the user to look at.
+In the `output/` folder a named `dataset/` folder will be generated containing all output files.
+Within this folder all processing files can be found in `mapping`, while the analysis tables and html report files can be found in `report`.
+
+### Mapping
+`/output/dataset/mapping/`
+The reads from the primary input fastq files are converted to BAM format and stored in `mapping/sample.bam` different lanes are split into `mapping/sample_l1.bam`. \
+Individual demultiplexed sample.bams can be found in `mapping/by_sample/`. \
+Each sample aligned and MIP arm trimmed can be found in BAM format in `mapping/aligned/` including BAM index files to visualize in IGV. \
+Sample information about the Inversion MIP design are stored in `mapping/inversion_mips` as individual Sample.bams and summarized in `mapping/inversion_mips/inversion_summary_counts.txt` \
+
+
+
+
+
 ## Pipeline description
 
 ### Primary sequence processing
@@ -202,7 +219,7 @@ Processed reads are aligned to the reference genome (here GRCh37 build from the 
 
 ### Coverage analysis and variant calling
 
-Coverage differences between MIPs are handled by down sampling regions of excessive coverage. Variants are genotyped using GATK (McKenna et al., 2010) UnifiedGenotyper (v3.4-46) in combination with IndelRealigner (v3.2-2). Alternatively, GATK v4.0.4.0 HaplotypeCaller is used in gVCF mode in combination with CombineGVCFs and GenotypeGVCFs. The gvcf output files are provided in the report output folder for further sample specific information.
+Coverage differences between MIPs are handled by down sampling regions of excessive coverage. Variants are genotyped using GATK (McKenna et al., 2010) UnifiedGenotyper (v3.4-46) in combination with IndelRealigner (v3.2-2). Alternatively, GATK v4.0.4.0 HaplotypeCaller is used in gVCF mode in combination with CombineGVCFs and GenotypeGVCFs. The gvcf output files are provided in the `output/dataset/mapping/gvcf/` output folder for further sample specific information.
 
 The hemophilia datasets perform similar when run either with the GATK3 or GATK4 workflow. However, in low quality genotype calls the performance might vary and a different call set might be obtained. In a reanalysis performed on one of the hemophilia sequencing experiments, the sample specific genotype agreement is above 0.99 (36 different out of 64,308 genotype calls) between the two GATK versions, with high agreement in associated genotype qualities. We therefore choose GATK4 as the standard setting for the workflow as this versions maintains support, is 50x faster and easier to upgrade.
 
