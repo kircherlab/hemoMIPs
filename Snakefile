@@ -201,7 +201,7 @@ rule samplesexcheck:
     lst="input/{dataset}/sample_index.lst",
     bams=sampleBamsAligned,
     idx=sampleBamsAlignedIdx
-  output:"output/{dataset}/samples_sex_check.txt"
+  output:"output/{dataset}/mapping/samples_sex_check.txt"
   conda: "envs/prep.yml"
   shell: "( for i in {input.bams}; do echo $( basename $i ) $(samtools view $i Y | wc -l) $(samtools view -F 4 $i | wc -l); done )> {output}"
 
@@ -285,7 +285,7 @@ rule gatk4_gvcfs:
     bam="output/{dataset}/mapping/aligned/{plate}.bam",
     idx="output/{dataset}/mapping/aligned/{plate}.bai"
   output:
-    vcfgz="output/{dataset}/report/gvcf/{plate}.g.vcf.gz"
+    vcfgz="output/{dataset}/mapping/gvcf/{plate}.g.vcf.gz"
   params:
     plate="{plate}"
   conda:"envs/gatk4.yml"
@@ -294,7 +294,7 @@ rule gatk4_gvcfs:
     """
 
 def sampleBamsInversion(wc):
-  return (expand("output/{dataset}/report/gvcf/{plate}.g.vcf.gz", dataset=wc.dataset, plate=loadSamples(wc)))
+  return (expand("output/{dataset}/mapping/gvcf/{plate}.g.vcf.gz", dataset=wc.dataset, plate=loadSamples(wc)))
 
 rule gatk4_combine:
   input:fasta=config["references"]["fasta"],
@@ -405,7 +405,7 @@ rule summaryreport_gatk4:
   input:vcf="output/{dataset}/mapping/gatk4/realign_all_samples.all_sites.vcf.gz",
         vep="output/{dataset}/mapping/gatk4/realign_all_samples.vep.tsv.gz",
         inv="output/{dataset}/mapping/inversion_mips/inversion_summary_counts.txt",
-        sex="output/{dataset}/samples_sex_check.txt",
+        sex="output/{dataset}/mapping/samples_sex_check.txt",
         target="input/{dataset}/target_coords.bed",
         mips="output/{dataset}/mapping/gatk4/realign_all_samples.MIPstats.tsv",
         hemomips="input/{dataset}/hemomips_design.txt",
@@ -422,7 +422,7 @@ rule summaryreport_gatk3:
   input:vcf="output/{dataset}/mapping/gatk3/realign_all_samples.all_sites.vcf.gz",
         vep="output/{dataset}/mapping/gatk3/realign_all_samples.vep.tsv.gz",
         inv="output/{dataset}/mapping/inversion_mips/inversion_summary_counts.txt",
-        sex="output/{dataset}/samples_sex_check.txt",
+        sex="output/{dataset}/mapping/samples_sex_check.txt",
         target="input/{dataset}/target_coords.bed",
         mips="output/{dataset}/mapping/gatk3/realign_all_samples.MIPstats.tsv",
         indel="output/{dataset}/mapping/gatk3/realign_all_samples.indel_check.txt",
