@@ -6,7 +6,7 @@ The hemoMIPs pipeline is a fast and efficient analysis pipeline for the analysis
 
 ### Conda
 
-The pipeline depends on [Snakemake](https://snakemake.readthedocs.io/en/stable/), a workflow management system that wraps up all scripts and runs them highly automated, in various environments. Further, we use Conda as software/dependency managment tool. Conda can install snakemake and all neccessary software with its dependencies automatically. Conda installation guidlines can be found here:
+The pipeline depends on [Snakemake](https://snakemake.readthedocs.io/en/stable/), a workflow management system that wraps up all scripts and runs them highly automated, in various environments (workstations, clusters, grid, or cloud). Further, we use Conda as software/dependency managment tool. Conda can install snakemake and all neccessary software with its dependencies automatically. Conda installation guidlines can be found here:
 
 https://conda.io/projects/conda/en/latest/user-guide/install/index.html
 
@@ -19,7 +19,7 @@ git clone https://github.com/kircherlab/hemoMIPs
 cd hemoMIPs
 ```
 
-We will initiate three Conda environments which we will need for some preparations as well as getting the Snakemake workflow invoked. The first environment (`hemoMIPs`) will contain only snakemake, the second (`ensemblVEP`) contains Ensembl VEP and htslib, the third (`prepTools`) some basic tools for preparing annotations (e.g. bedtools, samtools, htslib, bwa, picard):
+We will now initiate three Conda environments which we will need for some preparations as well as getting the Snakemake workflow invoked. The first environment (`hemoMIPs`) will contain only snakemake, the second (`ensemblVEP`) contains Ensembl VEP and htslib, the third (`prepTools`) contains some basic tools for preparing annotations (e.g. bedtools, samtools, htslib, bwa, picard):
 
 ```bash
 conda env create -n hemoMIPs --file environment.yaml
@@ -27,10 +27,15 @@ conda env create -n ensemblVEP --file envs/vep.yml
 conda env create -n prepTools --file envs/prep.yml
 ```
 
+The `ensemblVEP` and `prepTools` environments are only needed for the initial setup and can be deleted afterwards.
+
 ### Annotations of Ensembl VEP
 
-We use [Ensembl Variant Effect Predictor (VEP)](https://www.ensembl.org/info/docs/tools/vep/index.html) to predict variant effects. VEP was installed in a separate environment (`ensemblVEP`) above. Due to version conflicts with other software, it is not included with  other software. You will need to install the annotation caches for VEP separately. For this purpose, adjust the path to your location in the command line below. This command will download the human VEP cache (approx. 14G), which may take a while. \
-If you already have the VEP database, simply adjust the path to your database in the config.yml. Note that we run the pipeline using VEP v98. If you wish to use another version or cache, you should up- or downgrade your specific version of VEP and make sure that the other VEP version is correctly referenced in the workflow.
+We use [Ensembl Variant Effect Predictor (VEP)](https://www.ensembl.org/info/docs/tools/vep/index.html) to predict variant effects. You will need to install the annotation caches for VEP before you can run the snakmake workflow. For this purpose, you will need to run a tool from the `ensemblVEP` environment that we created above. Please adjust the path to your location in the command line below (`-c vep_cache/`). 
+
+Note that `snakemake` will later install a separate instance of VEP for running the pipeline and that we are only using the above environment to install the caches. Also note, that due to version conflicts with other software, VEP is not included in environments with other software.  If you already have the VEP database, simply adjust the path to your database in the config.yml. We run the pipeline using VEP v98. If you wish to use another version or cache, you should up- or downgrade your specific version of VEP and make sure that the other VEP version is correctly referenced in the workflow.
+  
+The following commands will download the human VEP cache (approx. 14G), which may take a while. \
 
 ```bash
 conda activate ensemblVEP
@@ -71,9 +76,9 @@ tabix -h ftp://ftp-trace.ncbi.nih.gov/1000genomes/ftp/release/20110521/ALL.wgs.p
 tabix -p vcf phase1_release_v3.20101123.snps_indels_svs.on_target.vcf.gz
 ```
 
-If you decided to include MIPs to discover targeted Inversions you will also need to provide a BWA index for the inversion MIPs as well as the logic of evaluating those in `scripts/processing/summary_report.py` (lines 138-169). If you do not have Inversion in your design set the Parameter in the config file (Parameters: Inv) to "no". In the following, we will assume that you are using the pipeline for the analysis of the hemophilia MIP design and provide the relevant files with your input folder.   \
-The environments needed to prepare the workflow can be removed at this step. Snakemake will install all additional packages during the first  run of the pipeline automatically.
-Do not remove the hemoMIPs environment as this is needed as the snakemake implementation is installed there.
+If you decided to include MIPs to capture specific inversion alleles you will also need to provide a BWA index for the inversion MIPs as well as the logic of evaluating those in `scripts/processing/summary_report.py` (lines 138-169). If you do not have inversion probes in your design, set the respective parameter (`Inv`) in the config file to "no". In the following, we will assume that you are using the pipeline for the analysis of the hemophilia MIP design and provide the relevant files with your input folder.
+
+The environments needed to prepare the workflow can be removed at this step. Snakemake will install packages required for the workflow  automatically during the first run of the pipeline. Do not remove the `hemoMIPs` environment as this is needed to invoke snakemake.
 
 ```bash
 conda deactivate
@@ -83,27 +88,29 @@ conda env remove --name prepTools
 
 ## Config
 
-Almost ready to go. After you prepared files as above, you need to adjust the locations of these files in the `config.yml`.\
-Further specify wether you want to analyze paired-end read or single-end read data as well as your index design (single or double index) in the `config.yml`. Set the parameters in the config file accordingly: 
+Almost ready to go. After you prepared files as above, you may need to adjust the locations and names of these files in the `config.yml`. Further, you need to specify your run type, i.e. whether you want to analyze paired-end read or single-end read data as well as your index design (single or double index) in the `config.yml`. The original workflow was developed for paired-end 2 x 120bp with one sample index read. The workflow however allows the analysis of single-ended reads and up to two index reads/technical reads. 
+
+Set the parameters in the config file accordingly: 
 
 ```
 parameters:
    inv: "yes" #set to "no" when no inversion design is provided
    paired_end_reads: "yes" #set to "no" when single-read sequencing is applied
-   double_index: "no" #set to yes when double indexing is applied
+   double_index: "no" #set to yes when double indexing is applied or a second technical read available 
 ```
 
-An example config can be found in `example_config.yml`. If you would like to run the example data set, please copy it to config.yml:
+Please note that the workflow supports double indexing, i.e. sequence combinations between the two technical reads identify a specific sample, or the provision of a second technical read (e.g. for unique molecular identifiers, UMIs) which is not used for sample assignment but propogated in a separate BAM field for each read. If you are using double indexing set `double_index` to "yes" and provide a three column `sample_index.lst` file (see below). If sequence information from a technical read should be included, also set `double_index` to "yes", but provide a two column `sample_index.lst` file (see below). In this case, the first index read will be used to assign samples, and the sequence of the second read will be included in the BAM files, but will not be evaluated.
+
+An example config can be found in `example_config.yml`. If you would like to run the example data set, please copy it to `config.yml`:
 
 ```bash
 cd /~PathTo~/hemoMIPs/
 cp example_config.yml config.yml
 ```
 
-
 ## List of required input files
 
-You need your NGS fastq files together with information about your MIP design and the targeted region. An example dataset is present with all crucial files and coresponding datastructures in `input/example_dataset`. The required files should be created using the Illumina bcl2fastq tool. The pipeline can handle paired-end and single-end reads with double or single indices (i.e. `Undetermined_S0_L00{lane}_R1_001.fastq.gz`, `Undetermined_S0_L00{lane}_I1_001.fastq.gz`, additional for paired end read data: `Undetermined_S0_L00{lane}_R2_001.fastq.gz`, in case of double indexing: `Undetermined_S0_L00{lane}_I2_001.fastq.gz`). For instance, a paired-end single index dataset could be created by `bcl2fastq --create-fastq-for-index-reads --use-bases-mask 'Y*,I*,Y*'`.
+You need your NGS fastq files together with information about your MIP design and the targeted regions. An example dataset is available with all relevant files in `input/example_dataset`. The required fastq input files should be created using the Illumina `bcl2fastq` tool. The pipeline can handle paired-end and single-end reads with up to two technical reads/index reads (i.e. `Undetermined_S0_L00{lane}_R1_001.fastq.gz`, `Undetermined_S0_L00{lane}_I1_001.fastq.gz`, additional for paired end read data: `Undetermined_S0_L00{lane}_R2_001.fastq.gz`, in case of a second index read: `Undetermined_S0_L00{lane}_I2_001.fastq.gz`). For instance, a paired-end single index dataset could be created by `bcl2fastq --create-fastq-for-index-reads --use-bases-mask 'Y*,I*,Y*'`.
 
 Put your NGS fastq files in input/ together with:
 - MIP design file as generated by `https://github.com/shendurelab/MIPGEN` named `hemomips_design.txt`
@@ -115,7 +122,9 @@ Examples and further information about these files is provided below.
 
 ### MIP probe design information
 
-Information about the designed MIP probes and their location in the reference genome is needed as a tab-separated text file for the tool TrimMIParms.py. The default input file has the following columns: index, score, chr, ext_probe_start, ext_probe_stop, ext_probe_copy, ext_probe_sequence, lig_probe_start, lig_probe_stop, lig_probe_copy, lig_probe_sequence, mip_scan_start_position, mip_scan_stop_position, scan_target_sequence, mip_sequence, feature_start_position, feature_stop_position, probe_strand, failure_flags, gene_name, mip_name. This format is obtained from MIP designs generated by MIPGEN (Boyle et al., 2014), a tool for MIP probe design available on GitHub (https://github.com/shendurelab/MIPGEN). Alternatively, files containing at least the following named columns can be used: chr, ext_probe_start, ext_probe_stop, lig_probe_start, lig_probe_stop, probe_strand, and mip_name. It is critical, that the reported coordinates and chromosome names match the reference genome used in alignment. We used Y specific targets (SRY) to detect the sex of the patient (see chr Y in the hemomips_design.txt). Individual Y targets can be design as sex determination is handled by generally counting Y-aligned reads. The pipeline runs without specific sex-determining MIPs as well but will output all samples to be female in the final report.
+Information about the designed MIP probes and their location in the reference genome is needed as a tab-separated text file for the script `TrimMIParms.py`. The default input file has the following columns: index, score, chr, ext_probe_start, ext_probe_stop, ext_probe_copy, ext_probe_sequence, lig_probe_start, lig_probe_stop, lig_probe_copy, lig_probe_sequence, mip_scan_start_position, mip_scan_stop_position, scan_target_sequence, mip_sequence, feature_start_position, feature_stop_position, probe_strand, failure_flags, gene_name, mip_name. This format is obtained from MIP designs generated by MIPGEN (Boyle et al., 2014), a tool for MIP probe design available on GitHub (https://github.com/shendurelab/MIPGEN). Alternatively, files containing at least the following named columns can be used: chr, ext_probe_start, ext_probe_stop, lig_probe_start, lig_probe_stop, probe_strand, and mip_name. It is critical, that the reported coordinates and chromosome names match the reference genome used in alignment. 
+
+We used Y-chromosome specific targets (SRY) to detect the sex of the patient (see chromosome `Y` in `hemomips_design.txt`). Different Y chromosome targets can be designed for sex determination as the workflow simply counts Y-aligned reads. The pipeline also runs without Y-specific MIPs for sex determination, but in this case will output all samples to be female in the final report.
 
 ### Named target regions in BED format
 
@@ -144,7 +153,7 @@ X       138645617       138645647       F9/downstream
 
 ### Known benign variants 
 
-A `benignVars.txt` can be used to describe known benign variants. If no such variants are available, an empty file with this name needs to be provided. If variants are provided in this file, these will be printed in gray font in the HTML report and separated in the CSV output files. An example of the format is provided below, the full file for the hemophila project is available as `input/example_dataset/benignVars.txt`
+A `benignVars.txt` can be used to describe known benign variants. If no such variants are available, an empty file with this name needs to be provided. If variants are provided in this file, these will be printed in gray font in the HTML report and separated in the CSV output files. An example of the format is provided below. The full file for the hemophila project is available as `input/example_dataset/benignVars.txt`.
 
 ```
 X_138633280_A/G
@@ -157,11 +166,11 @@ X_138645149_T/C
 
 ### Barcode to sample assignment
 
-A two or three column tab-separated file is required with the sequencing barcode information. The sample name will be used throughout the processing and reporting. The barcode sequence is assumed to be in the first index read of the Illumina sequencing run (I1 FastQ read file for single index, I1 and I2 for double index). The pipeline can also handle double index designs. An example for the sample assignment file is provided below:
+A two or three column tab-separated file is required with the sequencing barcode information. The sample name will be used throughout the processing and reporting. If a two colum tab-separated file is provided, the sample barcode sequence is assumed to be in the first index read of the Illumina sequencing run (I1 FastQ read file). The pipeline can also handle double index designs where sequence combinations in the I1 and I2 files identify a specific sample. An example for the sample assignment files is provided below:
 
 Single Index
 ```
-#Seq1  Name
+#Seq  Name
 ACTGGTAGG	Plate_001_01B.2
 GCTCCAACG	Plate_001_01C.3
 GCGTAAGAT	Plate_001_01D.4
@@ -171,8 +180,11 @@ GGATTCTCG	Plate_001_01F.6
 
 Double Index
 ```
-#Seq1 Seq2  Name
-CATGCGAGA CATGCGAGA Plate_001_01A.1
+#Index1	Index2	Name
+GGATTCTCG	ACTGGTAGG	Plate_001_01A.1
+CATGCGAGA	GCGTAAGAT	Plate_001_01B.2
+TGACCATCA	TGACCATCA	Plate_001_01C.3
+CATGCGAGA	GGATTCTCG	Plate_001_01D.4
 ```
 
 ## Run pipeline
@@ -188,31 +200,35 @@ snakemake  --use-conda --configfile config.yml -n
 snakemake  --use-conda --configfile config.yml
 ```
 
-We added an example_results folder to enable the user to compare the output of the example_dataset analysis to our results.
+We added an example_results folder to enable users to compare the output of the example_dataset analysis to our results.
 
 ## Output files
 
-The pipeline outputs varies files as intermediate step as well as final analysis tables for the user to look at.
-Here we describe the output folder structure. For further information about the various analysis steps, see _Pipeline description_ . \
+The pipeline outputs varies files in intermediate steps as well as final analysis tables for the user to look at.
+Here, we describe the output folder structure. For further information about the various analysis steps, see _Pipeline description_ below.
+
 In the `output/` folder `dataset/` folders (named after your individual datasets) will be generated containing all output files.
-Within this folder all processing files can be found in `mapping`, while the analysis tables and html report files can be found in `report`.
+Within this folder all processed files can be found in `mapping`, with genotyping files stored in `mapping/gatk4` or `mapping/gatk3`, respectively. The analysis tables and html report files can be found in `report`.
 
 ### Mapping
 `/output/dataset/mapping/` 
 
-The reads from the primary input fastq files are converted to BAM format and stored in `mapping/sample.bam` different lanes are split into `mapping/sample_l1.bam`. \
-Individual demultiplexed sample.bams can be found in `mapping/by_sample/`. \
-Each sample aligned and MIP arm trimmed can be found in BAM format in `mapping/aligned/` including BAM index files to visualize in IGV. \
-Sample information about the Inversion MIP design (if provided) are stored in `mapping/inversion_mips` as individual BAM files and summarized in `mapping/inversion_mips/inversion_summary_counts.txt`. \
-Genotyped files are stored in `mapping/gatk4` or `mapping/gatk3` respectively.
+The reads from the primary input fastq files are converted to BAM format (e.g. `mapping/sample.bam`). In case of multiple lanes, these are split into `mapping/sample_lX.bam` files. In these files, overlapping paired-end reads are merged (overlap consensus) and reads are assigned to samples using read groups. Information from the technical reads (I1/I2) is stored in `XI` and `YI` fields for the sequence and `XJ` and `YJ` fields for quality scores. 
+
+Individual (i.e. demultiplexed) sample.bams can be found in `mapping/by_sample/`.
+
+Aligned and MIP arm trimmed files for each sample can be found in BAM format in `mapping/aligned/`. This folder also contains BAM index files. These are index files are for example required to visualize alignments in IGV.
+
+Per sample information about reads aligning to the inversion MIP design (if provided) are stored in `mapping/inversion_mips` as individual BAM files and counts are summarized in `mapping/inversion_mips/inversion_summary_counts.txt`.
 
 #### Genotyping using GATK4
 `/output/dataset/mapping/gatk4`
 
-Output files generated by GATK4 HaplotypeCaller emitting all sites can be found as `realign_all_samples.bam` and `bam.vcf.gz`. \
-Genomic Variant Call Format (GVCF) files for each sample can be obtained in `gatk4/gvcf/` in the form of `sample.g.vcf.gz`. \
-`realign_all_samples.all_sites.vcf.gz` is the Combined VCF generated by GATK4 CombineGVCFs. \
+Output files generated by GATK4 HaplotypeCaller (emitting all sites) can be found as `realign_all_samples.bam` and `bam.vcf.gz`. \
+Genomic Variant Call Format (GVCF) files for each sample are available in `gatk4/gvcf/` as `SAMPLE.g.vcf.gz` files. \
+`realign_all_samples.all_sites.vcf.gz` is the combined VCF generated by GATK4 CombineGVCFs. \
 The final genotyped VCF is called `realign_all_samples.vcf.gz`. \
+
 MIP performance statistics can be found in `realign_all_samples.MIPstats.tsv`. \
 Variant Effect Pridictions are stored in `realign_all_samples.vep.tsv.gz`.
 
@@ -222,29 +238,16 @@ Variant Effect Pridictions are stored in `realign_all_samples.vep.tsv.gz`.
 This folder contains: \
 A realigned BAM generated by GATK3 IndelRealigner: `realign_all_samples.bam`. \
 A VCF containing genotypes for all sites generated by GATK3 UnifiedGenotyper: `realign_all_samples.all_sites.vcf.gz`. \
-The final VCF with variants of interest: `realign_all_samples.vcf.gz`. \
+The final VCF with non-homozygote reference alleles: `realign_all_samples.vcf.gz`. \
 A filtered list of InDels: `realign_all_samples.indel_check.txt`. \
+
 MIP performance statistics: `realign_all_samples.MIPstats.tsv`. \
 Variant Effect Pridictions: `realign_all_samples.vep.tsv.gz`.
 
 ## Report
 `/output/dataset/report`
 
-Your final analysis tables and html files are stored in the `/report/gatk4` or `/report/gatk3` folder depending on which GATK version is used. 
-
-### HTML files
-
-Various HTML files are generated to be visualized in a browser: \
-`ind_Sample1.html`, `ind_Sample2.html` ... contain sample specific performance and variant information. \
-`summary.html` and `report.html` contain summarized information of the full dataset. \
-
-### Analysis CSV tables
-
-`ind_status.csv` contains the individual analysed samples with performance statistics. \
-`inversion_calls.csv` contains information about the Inversion Design, empty if no Inversion design is provided. \
-`variant_annotation.csv` contains formation about all variants. \
-`variant_calls_benign.csv` and `variant_calls.csv` lists information about the benign and non-benign variants respectively.
-
+Final analysis tables and html files are stored in the `/report/gatk4` or `/report/gatk3` folder depending on which GATK version is used. A description of output files and is available in the sections _Report generation_ and _Report tables in text format_ below.
 
 ## Pipeline description
 
@@ -254,7 +257,7 @@ The primary inputs are raw FastQ files from the sequencing run as well as a samp
 
 ### Alignment and MIP arm trimming
 
-Processed reads are aligned to the reference genome (here GRCh37 build from the 1000 Genomes Project Phase II release) using Burrows-Wheeler Alignment (BWA) 0.7.5 mem (Li and Durbin, 2010). As MIP arm sequence can result in incorrect variant identification (by hiding existing variation below primer sequence), MIP arm sequences are trimmed based on alignment coordinates and new BAM files are created. In this step, we are using MIP design files from MIPgen (Boyle et al., 2014) by default. MIP representation statistics (text output file) are calculated from the aligned files. Further, reads aligning to the Y-chromosome-unique probes (SRY) are counted for each sample and reported (text output file). In a separate alignment step, all reads are aligned to a reference sequence file describing only the structural sequence variants as mutant and reference sequences. Results are summarized over all samples with the number of reads aligning to each sequence contig in a text report.
+Processed reads are aligned to the reference genome (here GRCh37 build from the 1000 Genomes Project Phase II release) using Burrows-Wheeler Alignment (BWA) 0.7.5 mem (Li and Durbin, 2010). As MIP arm sequence can result in incorrect variant identification (by hiding existing variation below primer sequence), MIP arm sequences are trimmed based on alignment coordinates and new BAM files are created. In this step, we are using MIP design files from MIPgen (Boyle et al., 2014) by default. MIP representation statistics (text output file) are calculated from the aligned files. Further, reads aligning to Y-chromosome-unique probes (SRY) are counted for each sample and reported (text output file). In a separate alignment step, all reads are aligned to a reference sequence file describing only the structural sequence variants as mutant and reference sequences. Results are summarized over all samples with the number of reads aligning to each sequence contig in a text report.
 
 ### Coverage analysis and variant calling
 
