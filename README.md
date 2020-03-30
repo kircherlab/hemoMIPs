@@ -103,7 +103,7 @@ parameters:
    double_index: "no" #set to yes when double indexing is applied or a second technical read available 
 ```
 
-Please note that the workflow supports double indexing, i.e. sequence combinations between the two technical reads identify a specific sample, or the provision of a second technical read (e.g. for unique molecular identifiers, UMIs) which is not used for sample assignment but propogated in a separate BAM field for each read. If you are using double indexing set `double_index` to "yes" and provide a three column `sample_index.lst` file (see below). If sequence information from a technical read should be included, also set `double_index` to "yes", but provide a two column `sample_index.lst` file (see below). In this case, the first index read will be used to assign samples, and the sequence of the second read will be included in the BAM files, but will not be evaluated.
+Please note that the workflow supports double indexing, i.e. sequence combinations between the two technical reads identify a specific sample, or the provision of a second technical read (e.g. for unique molecular identifiers, UMIs) which is not used for sample assignment but propagated in a separate BAM field for each read. If you are using double indexing set `double_index` to "yes" and provide a three column `sample_index.lst` file (see below). If sequence information from a technical read should be included, also set `double_index` to "yes", but provide a two column `sample_index.lst` file (see below). In this case, the first index read will be used to assign samples, and the sequence of the second read will be included in the BAM files, but will not be evaluated.
 
 An example config can be found in `example_config.yml`. If you would like to run the example data set, please copy it to `config.yml`:
 
@@ -174,7 +174,7 @@ A two or three column tab-separated file is required with the sequencing barcode
 
 Single Index
 ```
-#Seq  Name
+#Seq	Name
 ACTGGTAGG	Plate_001_01B.2
 GCTCCAACG	Plate_001_01C.3
 GCGTAAGAT	Plate_001_01D.4
