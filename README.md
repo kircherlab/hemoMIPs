@@ -92,9 +92,9 @@ conda env remove --name prepTools
 
 ## Config
 
-Almost ready to go. After you prepared files as above, you may need to adjust the locations and names of these files in the `config.yml`. Further, you need to specify your run type, i.e. whether you want to analyze paired-end read or single-end read data as well as your index design (single or double index) in the `config.yml`. The original workflow was developed for paired-end 2 x 120bp with one sample index read. The workflow however allows the analysis of single-ended reads and up to two index reads/technical reads. 
+Almost ready to go. After you prepared files as above, you may need to adjust the locations and names of these files in the `config.yml`. Further, you need to specify your run type, i.e. whether you want to analyze paired-end read or single-end read data as well as your index design (single or double index) in the `config.yml`. The original workflow was developed for paired-end 2 x 120bp with one sample index read. The workflow however allows the analysis of single-ended reads and up to two index reads/technical reads. If you have other read layouts, you might be able to reorganize your sequence data, to match our workflow. For this purpose, see the section on 'Alternative Read Layouts' below. 
 
-Set the parameters in the config file accordingly: 
+To adjust single vs. paired-end, type of indexing or to deactivate inversion analysis, set the following parameters in the config file accordingly: 
 
 ```
 parameters:
@@ -123,6 +123,62 @@ Put your NGS fastq files in input/ together with:
 - A barcode sample assignment file named `sample_index.lst`
 
 Examples and further information about these files is provided below.
+
+### Alternative read layouts
+
+The most complex read layout supported by our workflow involves two reads for paired end sequences and up to two technical reads. From the technical reads either the first (single index) or both identify the sample (double index). If no double indexing is specified, but a second technical read specified, its sequence is propagated with the other read information. Thereby, UMI information can be maintained throughout the processing and later evaluated. If UMI sequences are actually read as part of a paired end or single read run, these might be moved to the second technical read. If double indexing is also used, the two double index sequences might be combined into one virtual read, freeing the second technical read for UMIs. Here are examples of how this reformatting of the input fastq files is achieved with commonly avaiable bash commands:
+
+*Combining double indexes to free up a technical read*
+
+Combine I1 and I2 fastq files in one file:
+
+```bash
+paste <( zcat {Undetermined_S0_L001_I1_001.fastq.gz} ) \
+      <( zcat {Undetermined_S0_L001_I2_001.fastq.gz} ) | \
+awk '{ count+=1; if ((count == 1) || (count == 3)) { print $1 } else { print $1$2 }; if (count == 4) { count=0 } }' | \
+gzip -c > mod_Undetermined_S0_L001_I1_001.fastq.gz
+```
+
+For the barcode to sample assignment (`sample_index.lst`), use the format for a single index run and combine the double index sequences to one long string (Index1: GGATTCTCG	and Index2: ACTGGTAGG becomes GGATTCTCGACTGGTAGG). 
+
+*Cutting UMI sequences out of the main reads*
+
+If you have for example 4 bp UMIs in the beginning of forward and reverse read, combine them to an 8 bp technical read:
+
+```bash
+paste <( zcat Undetermined_S0_L001_R1_001.fastq.gz ) \
+      <( zcat Undetermined_S0_L001_R2_001.fastq.gz ) | \
+awk '{ count+=1; if ((count == 1) || (count == 3)) { print $1 } else { print substr($1,1,4)""substr($2,1,4) }; if (count == 4) { count=0 } }' | \
+gzip -c > mod_Undetermined_S0_L001_I2_001.fastq.gz
+```
+
+Trim these 4 bp from the beginning of the reads:
+
+```bash
+zcat Undetermined_S0_L001_R1_001.fastq.gz | \
+awk '{ count+=1; if ((count == 1) || (count == 3)) { print $1 } else { print substr($1,5) }; if (count == 4) { count=0 } }' | \
+gzip -c > mod_Undetermined_S0_L001_R1_001.fastq.gz
+zcat Undetermined_S0_L001_R2_001.fastq.gz | \
+awk '{ count+=1; if ((count == 1) || (count == 3)) { print $1 } else { print substr($1,5) }; if (count == 4) { count=0 } }' | \
+gzip -c > mod_Undetermined_S0_L001_R2_001.fastq.gz
+```
+
+
+If an 8 bp UMI is only present in the beginning of the forward read, copy these 8 bp into a technical read:
+
+```bash
+zcat Undetermined_S0_L001_R1_001.fastq.gz | \
+awk '{ count+=1; if ((count == 1) || (count == 3)) { print $1 } else { print substr($1,1,8) }; if (count == 4) { count=0 } }' | \
+gzip -c > mod_Undetermined_S0_L001_I2_001.fastq.gz
+```
+
+Do not forget to also trim these 8 bp from the forward read:
+
+```bash
+zcat Undetermined_S0_L001_R1_001.fastq.gz | \
+awk '{ count+=1; if ((count == 1) || (count == 3)) { print $1 } else { print substr($1,9) }; if (count == 4) { count=0 } }' | \
+gzip -c > mod_Undetermined_S0_L001_R1_001.fastq.gz
+```
 
 ### MIP probe design information
 
