@@ -127,7 +127,7 @@ Examples and further information about these files is provided below.
 
 The most complex read layout supported by our workflow involves two reads for paired end sequences and up to two technical reads. From the technical reads either the first (single index) or both identify the sample (double index). If no double indexing is specified, but a second technical read specified, its sequence is propagated with the other read information. Thereby, UMI information can be maintained throughout the processing and later evaluated. If UMI sequences are actually read as part of a paired end or single read run, these might be moved to the second technical read. If double indexing is also used, the two double index sequences might be combined into one virtual read, freeing the second technical read for UMIs. 
 
-Below, we provide examples of how this reformatting of the input fastq files is achieved with commonly available bash commands. Please note that the examples assume only one lane, if several lanes need to be reformated, these could be processed in parallel or with bash for loops.
+Below, we provide examples of how this reformatting of the input fastq files is achieved with commonly available bash commands. Please note that the examples assume only one lane, if several lanes need to be reformatted, these could be processed in parallel or with bash for loops.
 
 *Combining double indexes to free up a technical read*
 
