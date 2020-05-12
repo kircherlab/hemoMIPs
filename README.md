@@ -39,7 +39,7 @@ We use [Ensembl Variant Effect Predictor (VEP)](https://www.ensembl.org/info/doc
 
 Note that `snakemake` will later install a separate instance of VEP for running the pipeline and that we are only using the above environment to install the caches. Also note, that due to version conflicts with other software, VEP is not included in environments with other software.  If you already have the VEP database, simply adjust the path to your database in the config.yml. We run the pipeline using VEP v98. If you wish to use another version or cache, you should up- or downgrade your specific version of VEP and make sure that the other VEP version is correctly referenced in the workflow.
   
-The following commands will download the human VEP cache (approx. 14G), which may take a while. \
+The following commands will download the human VEP cache (approx. 14G), which may take a while. 
 
 ```bash
 conda activate ensemblVEP
@@ -76,11 +76,10 @@ cd /~PathTo~/hemoMIPs/
 mkdir known_variants
 cd known_variants
 tabix -h ftp://ftp-trace.ncbi.nih.gov/1000genomes/ftp/release/20110521/ALL.wgs.phase1_release_v3.20101123.snps_indels_sv.sites.vcf.gz -R <( awk 'BEGIN{OFS="\t"}{print $1,$2-50,$3+50}' ../input/example_dataset/target_coords.bed | sort -k1,1 -k2,2n -k3,3n | bedtools merge ) | bgzip -c > phase1_release_v3.20101123.snps_indels_svs.on_target.vcf.gz
-
 tabix -p vcf phase1_release_v3.20101123.snps_indels_svs.on_target.vcf.gz
 ```
 
-If you decided to include MIPs to capture specific inversion alleles you will also need to provide a BWA index for the inversion MIPs as well as the logic of evaluating those in `scripts/processing/summary_report.py` (lines 138-169). If you do not have inversion probes in your design, set the respective parameter (`Inv`) in the config file to "no". In the following, we will assume that you are using the pipeline for the analysis of the hemophilia MIP design and provide the relevant files with your input folder.
+If you decided to include MIPs to capture specific inversion alleles, you will also need to provide a BWA index for the inversion MIPs as well as the logic of evaluating those in `scripts/processing/summary_report.py` (lines 138-169). If you do not have inversion probes in your design, set the respective parameter (`Inv`) in the config file to "no". In the following, we will assume that you are using the pipeline for the analysis of the hemophilia MIP design and provide the relevant files with your input folder.
 
 The environments needed to prepare the workflow can be removed at this step. Snakemake will install packages required for the workflow  automatically during the first run of the pipeline. Do not remove the `hemoMIPs` environment as this is needed to invoke snakemake.
 
@@ -92,7 +91,7 @@ conda env remove --name prepTools
 
 ## Config
 
-Almost ready to go. After you prepared files as above, you may need to adjust the locations and names of these files in the `config.yml`. Further, you need to specify your run type, i.e. whether you want to analyze paired-end read or single-end read data as well as your index design (single or double index) in the `config.yml`. The original workflow was developed for paired-end 2 x 120bp with one sample index read. The workflow however allows the analysis of single-ended reads and up to two index reads/technical reads. If you have other read layouts, you might be able to reorganize your sequence data, to match our workflow. For this purpose, see the section on 'Alternative Read Layouts' below. 
+Almost ready to go. After you prepared the files above, you may need to adjust locations and names of these files in the `config.yml`. Further, you need to specify your run type, i.e. whether you want to analyze paired-end read or single-end read data as well as your index design (single or double index) in the `config.yml`. The original workflow was developed for paired-end 2 x 120bp with one sample index read. The workflow however allows the analysis of single-end reads and up to two index reads/technical reads. If you have other read layouts, you might be able to reorganize your sequence data to match our workflow. For this purpose, see the section on 'Alternative Read Layouts' below. 
 
 To adjust single vs. paired-end, type of indexing or to deactivate inversion analysis, set the following parameters in the config file accordingly: 
 
@@ -114,7 +113,7 @@ cp example_config.yml config.yml
 
 ## List of required input files
 
-You need your NGS fastq files together with information about your MIP design and the targeted regions. An example dataset is available with all relevant files in `input/example_dataset`. The required fastq input files should be created using the Illumina `bcl2fastq` tool. The pipeline can handle paired-end and single-end reads with up to two technical reads/index reads (i.e. `Undetermined_S0_L00{lane}_R1_001.fastq.gz`, `Undetermined_S0_L00{lane}_I1_001.fastq.gz`, additional for paired end read data: `Undetermined_S0_L00{lane}_R2_001.fastq.gz`, in case of a second index read: `Undetermined_S0_L00{lane}_I2_001.fastq.gz`). For instance, a paired-end single index dataset could be created by `bcl2fastq --create-fastq-for-index-reads --use-bases-mask 'Y*,I*,Y*'`.
+You need your NGS fastq files, information about your MIP design and the targeted regions. An example dataset is available with all relevant files in `input/example_dataset`. The required fastq input files should be created using the Illumina `bcl2fastq` tool (without using the tools' demultiplexing functionality). The pipeline can handle paired-end and single-end reads with up to two technical reads/index reads (i.e. `Undetermined_S0_L00{lane}_R1_001.fastq.gz`, `Undetermined_S0_L00{lane}_I1_001.fastq.gz`, additional for paired end read data: `Undetermined_S0_L00{lane}_R2_001.fastq.gz`, in case of a second index read: `Undetermined_S0_L00{lane}_I2_001.fastq.gz`). For instance, a paired-end single index dataset could be created by `bcl2fastq --create-fastq-for-index-reads --use-bases-mask 'Y*,I*,Y*'`.
 
 Put your NGS fastq files in input/ together with:
 - MIP design file as generated by `https://github.com/shendurelab/MIPGEN` named `hemomips_design.txt`
@@ -126,7 +125,9 @@ Examples and further information about these files is provided below.
 
 ### Alternative read layouts
 
-The most complex read layout supported by our workflow involves two reads for paired end sequences and up to two technical reads. From the technical reads either the first (single index) or both identify the sample (double index). If no double indexing is specified, but a second technical read specified, its sequence is propagated with the other read information. Thereby, UMI information can be maintained throughout the processing and later evaluated. If UMI sequences are actually read as part of a paired end or single read run, these might be moved to the second technical read. If double indexing is also used, the two double index sequences might be combined into one virtual read, freeing the second technical read for UMIs. Here are examples of how this reformatting of the input fastq files is achieved with commonly avaiable bash commands:
+The most complex read layout supported by our workflow involves two reads for paired end sequences and up to two technical reads. From the technical reads either the first (single index) or both identify the sample (double index). If no double indexing is specified, but a second technical read specified, its sequence is propagated with the other read information. Thereby, UMI information can be maintained throughout the processing and later evaluated. If UMI sequences are actually read as part of a paired end or single read run, these might be moved to the second technical read. If double indexing is also used, the two double index sequences might be combined into one virtual read, freeing the second technical read for UMIs. 
+
+Below, we provide examples of how this reformatting of the input fastq files is achieved with commonly available bash commands. Please note that the examples assume only one lane, if several lanes need to be reformated, these could be processed in parallel or with bash for loops.
 
 *Combining double indexes to free up a technical read*
 
@@ -139,11 +140,11 @@ awk '{ count+=1; if ((count == 1) || (count == 3)) { print $1 } else { print $1$
 gzip -c > mod_Undetermined_S0_L001_I1_001.fastq.gz
 ```
 
-For the barcode to sample assignment (`sample_index.lst`), use the format for a single index run and combine the double index sequences to one long string (Index1: GGATTCTCG	and Index2: ACTGGTAGG becomes GGATTCTCGACTGGTAGG). 
+For the barcode-to-sample assignment (`sample_index.lst`), use the format for a single index run and combine the double index sequences to one long string (Index1: GGATTCTCG	and Index2: ACTGGTAGG becomes GGATTCTCGACTGGTAGG). 
 
 *Cutting UMI sequences out of the main reads*
 
-If you have for example 4 bp UMIs in the beginning of forward and reverse read, combine them to an 8 bp technical read:
+If you have for example 4-bp-UMIs in the beginning of forward and reverse read, combine them to an 8 bp technical read:
 
 ```bash
 paste <( zcat Undetermined_S0_L001_R1_001.fastq.gz ) \
@@ -213,7 +214,7 @@ X       138645617       138645647       F9/downstream
 
 ### Known benign variants 
 
-A `benignVars.txt` can be used to describe known benign variants. If no such variants are available, an empty file with this name needs to be provided. If variants are provided in this file, these will be printed in gray font in the HTML report and separated in the CSV output files. An example of the format is provided below. The full file for the hemophila project is available as `input/example_dataset/benignVars.txt`.
+A `benignVars.txt` can be used to describe known benign variants. If no such variants are available, an empty file with this name needs to be provided. If variants are provided in this file, these will be printed in gray font in the HTML report and separated in the CSV output files. An example of the format is provided below. The full file for the hemophilia project is available as `input/example_dataset/benignVars.txt`.
 
 ```
 X_138633280_A/G
@@ -260,7 +261,7 @@ snakemake  --use-conda --configfile config.yml -n
 snakemake  --use-conda --configfile config.yml
 ```
 
-We added an example_results folder to enable users to compare the output of the example_dataset analysis to our results.
+We added an example_results folder to the repository to enable users to compare the output of the example_dataset analysis to our results.
 
 ## Output files
 
@@ -305,7 +306,7 @@ Variant Effect Predictions: `realign_all_samples.vep.tsv.gz`.
 ## Report
 `/output/dataset/report`
 
-Final analysis tables and html files are stored in the `/report/gatk4` or `/report/gatk3` folder depending on which GATK version is used. A description of output files and is available in the sections _Report generation_ and _Report tables in text format_ below.
+Final analysis tables and html files are stored in the `/report/gatk4` or `/report/gatk3` folder depending on which GATK version is used. A description of output files is available in the sections _Report generation_ and _Report tables in text format_ below.
 
 ## Pipeline description
 
