@@ -30,7 +30,7 @@ conda env create -n prepTools --file envs/prep.yml
 The `ensemblVEP` and `prepTools` environments are only needed for the initial setup and can be deleted afterwards. In case you are having difficulties installing the `hemoMIPs` environment (i.e. snakemake) using the yaml file, please try the following work-a-round:
 
 ```
-conda install -n hemoMIPs -c bioconda -c conda-forge snakemake
+conda create -n hemoMIPs -c bioconda -c conda-forge snakemake
 ```
 
 ### Annotations of Ensembl VEP
